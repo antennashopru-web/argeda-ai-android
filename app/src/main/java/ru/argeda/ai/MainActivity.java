@@ -47,6 +47,16 @@ public class MainActivity extends Activity {
     private Uri cameraUri;
     private PermissionRequest pendingWebPermission;
     private boolean loadFailed;
+    private final android.os.Handler zavis = new android.os.Handler(android.os.Looper.getMainLooper());
+    /** The site did not answer in 20 s: show the offline screen instead of an empty page. */
+    private final Runnable zavisCheck = () -> {
+        if (web.getProgress() < 60) {
+            loadFailed = true;
+            web.stopLoading();
+            progress.setVisibility(View.GONE);
+            offline.setVisibility(View.VISIBLE);
+        }
+    };
     private Obnovlenie obnovlenie;
     private String hookJs = "";
     private WebChromeClient.FileChooserParams pendingChooser;
@@ -231,9 +241,12 @@ public class MainActivity extends Activity {
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 loadFailed = false;
                 progress.setVisibility(View.VISIBLE);
+                zavis.removeCallbacks(zavisCheck);
+                zavis.postDelayed(zavisCheck, 20000);
             }
             @Override
             public void onPageFinished(WebView view, String url) {
+                zavis.removeCallbacks(zavisCheck);
                 progress.setVisibility(View.GONE);
                 if (url != null && url.startsWith("https://" + HOST)) view.evaluateJavascript(hookJs, null);
                 cm.flush();
@@ -363,7 +376,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/1.7");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/1.8");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);

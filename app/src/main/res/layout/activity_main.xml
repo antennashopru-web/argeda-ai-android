@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/bg">
+    <WebView android:id="@+id/web" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="3dp" android:layout_gravity="top"
+        android:progressTint="@color/accent" android:progressBackgroundTint="@color/bg" android:max="100" android:visibility="gone" />
+    <LinearLayout android:id="@+id/popup" android:orientation="vertical"
+        android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg" android:visibility="gone">
+        <LinearLayout android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_width="match_parent" android:layout_height="48dp" android:background="@color/bg" android:paddingStart="4dp" android:paddingEnd="12dp">
+            <Button android:id="@+id/popup_close" android:layout_width="wrap_content" android:layout_height="40dp" android:text="‹ Назад"
+                android:background="@android:color/transparent" android:textColor="@color/accent" android:textSize="17sp" android:textAllCaps="false" />
+            <TextView android:id="@+id/popup_title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                android:textColor="@color/muted" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <FrameLayout android:id="@+id/popup_body" android:layout_width="match_parent" android:layout_height="match_parent" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/offline" android:orientation="vertical" android:gravity="center"
+        android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg"
+        android:padding="32dp" android:visibility="gone">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/offline_title"
+            android:textColor="@color/text" android:textSize="24sp" android:textStyle="bold" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/offline_text"
+            android:textColor="@color/muted" android:textSize="16sp" android:gravity="center" android:layout_marginTop="8dp" />
+        <Button android:id="@+id/retry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/retry"
+            android:layout_marginTop="24dp" android:backgroundTint="@color/accent" android:textColor="@color/bg" android:textAllCaps="false" />
+    </LinearLayout>
+</FrameLayout>

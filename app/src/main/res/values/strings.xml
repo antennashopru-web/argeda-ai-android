@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ARGEDA AI</string>
+    <string name="offline_title">Нет связи</string>
+    <string name="offline_text">Проверьте интернет и нажмите «Повторить».</string>
+    <string name="retry">Повторить</string>
+    <string name="download_started">Файл скачивается в папку «Загрузки»</string>
+    <string name="choose_file">Выберите файл</string>
+</resources>

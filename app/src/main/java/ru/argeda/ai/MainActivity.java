@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private ProgressBar progress;
-    private View offline;
+    private Karkas karkas;
     private ValueCallback<Uri[]> fileCallback;
     private Uri cameraUri;
     private PermissionRequest pendingWebPermission;
@@ -54,7 +54,8 @@ public class MainActivity extends Activity {
             loadFailed = true;
             web.stopLoading();
             progress.setVisibility(View.GONE);
-            offline.setVisibility(View.VISIBLE);
+            karkas.pokazat("net");
+            karkas.neUdalos();
         }
     };
     private Obnovlenie obnovlenie;
@@ -181,12 +182,15 @@ public class MainActivity extends Activity {
                 try (java.io.OutputStream out = getContentResolver().openOutputStream(u)) { out.write(data); }
                 v.clear(); v.put(MediaStore.Downloads.IS_PENDING, 0);
                 getContentResolver().update(u, v, null, null);
+                karkas.zapisatFayl(u, mime, name);
             } else {
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "ARGEDA AI");
                 dir.mkdirs();
                 File f = new File(dir, name);
                 try (java.io.FileOutputStream out = new java.io.FileOutputStream(f)) { out.write(data); }
-                ((DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE)).addCompletedDownload(name, name, true, mime, f.getAbsolutePath(), f.length(), true);
+                DownloadManager dm0 = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                long did = dm0.addCompletedDownload(name, name, true, mime, f.getAbsolutePath(), f.length(), true);
+                karkas.zapisatFayl(dm0.getUriForDownloadedFile(did), mime, name);
             }
             String where = mime.startsWith("image/") || mime.startsWith("video/") ? "в галерею (ARGEDA AI)" : "в Загрузки / ARGEDA AI";
             Toast.makeText(this, "Сохранено " + where + ": " + name, Toast.LENGTH_LONG).show();
@@ -216,8 +220,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         web = findViewById(R.id.web);
         progress = findViewById(R.id.progress);
-        offline = findViewById(R.id.offline);
-        findViewById(R.id.retry).setOnClickListener(v -> { offline.setVisibility(View.GONE); web.reload(); });
+        karkas = new Karkas(this, findViewById(R.id.offline));
 
         setupWebView(web);
         WebSettings s = web.getSettings();
@@ -250,13 +253,18 @@ public class MainActivity extends Activity {
                 progress.setVisibility(View.GONE);
                 if (url != null && url.startsWith("https://" + HOST)) view.evaluateJavascript(hookJs, null);
                 cm.flush();
-                if (!loadFailed) offline.setVisibility(View.GONE);
+                if (!loadFailed) { karkas.skryt(); karkas.zaplanirovatSnimok(view, url); }
+                else karkas.neUdalos();
+            }
+            @Override
+            public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                if (!loadFailed) karkas.zaplanirovatSnimok(view, url);
             }
             @Override
             public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
                 if (req.isForMainFrame()) {
                     loadFailed = true;
-                    offline.setVisibility(View.VISIBLE);
+                    karkas.pokazat("net");
                 }
             }
         });
@@ -330,6 +338,7 @@ public class MainActivity extends Activity {
         } catch (java.io.IOException e) { hookJs = ""; }
         applyInsets();
         obnovlenie = new Obnovlenie(this);
+        slushatSet();
         android.content.IntentFilter f = new android.content.IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(downloadDone, f, Context.RECEIVER_EXPORTED); else registerReceiver(downloadDone, f);
 
@@ -339,6 +348,7 @@ public class MainActivity extends Activity {
             web.restoreState(savedInstanceState);
         } else {
             Uri data = getIntent() != null ? getIntent().getData() : null;
+            if (!Karkas.estSet(this)) karkas.pokazat("net");
             web.loadUrl(data != null && HOST.equals(data.getHost()) ? data.toString() : HOME);
         }
     }
@@ -376,7 +386,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/1.8");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/1.9");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -388,7 +398,7 @@ public class MainActivity extends Activity {
     private View popup;
     private android.widget.TextView popupTitle;
 
-    private void openPopup(WebView p) {
+    void openPopup(WebView p) {
         closePopup();
         popupWeb = p;
         ((android.widget.FrameLayout) findViewById(R.id.popup_body)).addView(p, new android.widget.FrameLayout.LayoutParams(-1, -1));
@@ -396,12 +406,37 @@ public class MainActivity extends Activity {
         popup.setVisibility(View.VISIBLE);
     }
 
-    private void closePopup() {
+    void closePopup() {
         if (popupWeb == null) return;
         WebView p = popupWeb; popupWeb = null;
         ((android.widget.FrameLayout) findViewById(R.id.popup_body)).removeView(p);
         popup.setVisibility(View.GONE);
         p.post(p::destroy);
+    }
+
+    // ---------- called by the offline shell (Karkas) ----------
+    void povtoritSayt() {
+        karkas.pokazat("proverka");
+        String u = web.getUrl();
+        if (u == null || !u.startsWith("https://" + HOST)) web.loadUrl(HOME); else web.reload();
+    }
+    boolean saytLezhit() { return loadFailed; }
+    void otkrytSayt(String url) { karkas.pokazat("proverka"); web.loadUrl(url); }
+    void otkrytOkno(WebView p, String title) { openPopup(p); popupTitle.setText(title); }
+    void zakrytOkno() { closePopup(); }
+
+    /** The connection came back while the shell is shown: try the site by itself. */
+    private android.net.ConnectivityManager.NetworkCallback setVernulas;
+    private void slushatSet() {
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            setVernulas = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network n) {
+                    web.postDelayed(() -> { if (karkas.vidim()) povtoritSayt(); }, 1500);
+                }
+            };
+            cm.registerDefaultNetworkCallback(setVernulas);
+        } catch (Exception ignored) {}
     }
 
     /** true = handled outside the WebView; false = let WebView load it. */
@@ -452,14 +487,18 @@ public class MainActivity extends Activity {
     }
 
     private final java.util.Set<Long> openWhenDone = new java.util.HashSet<>();
+    private final java.util.Map<Long, String> nashi = new java.util.HashMap<>();
     private final android.content.BroadcastReceiver downloadDone = new android.content.BroadcastReceiver() {
         @Override public void onReceive(Context c, Intent i) {
             long id = i.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-            if (!openWhenDone.remove(id)) return;
+            String nm = nashi.remove(id);
+            if (nm == null) return;
             DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
             Uri u = dm.getUriForDownloadedFile(id);
             String t = dm.getMimeTypeForDownloadedFile(id);
-            if (u == null) return;
+            if (u == null) { openWhenDone.remove(id); return; }
+            karkas.zapisatFayl(u, t, nm);
+            if (!openWhenDone.remove(id)) return;
             Intent v = new Intent(Intent.ACTION_VIEW).setDataAndType(u, t == null ? "application/pdf" : t).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             if (t != null && t.contains("android.package-archive") && Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
                 Toast.makeText(MainActivity.this, "Разрешите установку из ARGEDA AI, затем откройте файл из «Загрузок»", Toast.LENGTH_LONG).show();
@@ -492,6 +531,7 @@ public class MainActivity extends Activity {
             r.setDestinationInExternalPublicDir(dir, "ARGEDA AI/" + name);
             r.allowScanningByMediaScanner();
             long id = ((DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(r);
+            nashi.put(id, name);
             String ml = m.toLowerCase();
             boolean doc = ml.contains("pdf") || name.toLowerCase().endsWith(".pdf") || ml.contains("msword") || ml.contains("officedocument") || ml.contains("ms-excel")
                     || ml.contains("android.package-archive") || name.toLowerCase().endsWith(".apk");
@@ -632,7 +672,7 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (popupWeb != null) { if (popupWeb.canGoBack()) popupWeb.goBack(); else closePopup(); return; }
-        if (offline.getVisibility() == View.VISIBLE) { offline.setVisibility(View.GONE); }
+        if (karkas.vidim()) { super.onBackPressed(); return; }
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 
@@ -653,6 +693,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         if (PleerService.ui == this) PleerService.ui = null;
         try { unregisterReceiver(downloadDone); } catch (Exception ignored) {}
+        try { if (setVernulas != null) ((android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE)).unregisterNetworkCallback(setVernulas); } catch (Exception ignored) {}
         closePopup(); web.destroy(); super.onDestroy();
     }
 }

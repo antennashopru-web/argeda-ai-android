@@ -6,6 +6,8 @@
     <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent" android:layout_height="3dp" android:layout_gravity="top"
         android:progressTint="@color/accent" android:progressBackgroundTint="@color/bg" android:max="100" android:visibility="gone" />
+    <WebView android:id="@+id/offline" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:background="@color/bg" android:visibility="gone" />
     <LinearLayout android:id="@+id/popup" android:orientation="vertical"
         android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg" android:visibility="gone">
         <LinearLayout android:orientation="horizontal" android:gravity="center_vertical"
@@ -16,15 +18,5 @@
                 android:textColor="@color/muted" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
         <FrameLayout android:id="@+id/popup_body" android:layout_width="match_parent" android:layout_height="match_parent" />
-    </LinearLayout>
-    <LinearLayout android:id="@+id/offline" android:orientation="vertical" android:gravity="center"
-        android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg"
-        android:padding="32dp" android:visibility="gone">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/offline_title"
-            android:textColor="@color/text" android:textSize="24sp" android:textStyle="bold" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/offline_text"
-            android:textColor="@color/muted" android:textSize="16sp" android:gravity="center" android:layout_marginTop="8dp" />
-        <Button android:id="@+id/retry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/retry"
-            android:layout_marginTop="24dp" android:backgroundTint="@color/accent" android:textColor="@color/bg" android:textAllCaps="false" />
     </LinearLayout>
 </FrameLayout>

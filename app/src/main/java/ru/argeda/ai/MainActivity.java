@@ -47,10 +47,11 @@ public class MainActivity extends Activity {
     private Uri cameraUri;
     private PermissionRequest pendingWebPermission;
     private boolean loadFailed;
+    private boolean stranitsaGotova;
     private final android.os.Handler zavis = new android.os.Handler(android.os.Looper.getMainLooper());
     /** The site did not answer in 20 s: show the offline screen instead of an empty page. */
     private final Runnable zavisCheck = () -> {
-        if (web.getProgress() < 60) {
+        if (!stranitsaGotova) {
             loadFailed = true;
             web.stopLoading();
             progress.setVisibility(View.GONE);
@@ -243,9 +244,10 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 loadFailed = false;
+                stranitsaGotova = false;
                 progress.setVisibility(View.VISIBLE);
                 zavis.removeCallbacks(zavisCheck);
-                zavis.postDelayed(zavisCheck, 20000);
+                zavis.postDelayed(zavisCheck, 12000);
             }
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -253,8 +255,9 @@ public class MainActivity extends Activity {
                 progress.setVisibility(View.GONE);
                 if (url != null && url.startsWith("https://" + HOST)) view.evaluateJavascript(hookJs, null);
                 cm.flush();
-                if (!loadFailed) { karkas.skryt(); karkas.zaplanirovatSnimok(view, url); }
-                else karkas.neUdalos();
+                if (loadFailed) { karkas.neUdalos(); return; }
+                // a blank page (server half-alive, empty answer) must not leave a black screen
+                proveritSoderzhimoe(view, url, 0);
             }
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
@@ -263,6 +266,13 @@ public class MainActivity extends Activity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError err) {
                 if (req.isForMainFrame()) {
+                    loadFailed = true;
+                    karkas.pokazat("net");
+                }
+            }
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest req, android.webkit.WebResourceResponse resp) {
+                if (req.isForMainFrame() && resp != null && resp.getStatusCode() >= 500) {
                     loadFailed = true;
                     karkas.pokazat("net");
                 }
@@ -348,7 +358,8 @@ public class MainActivity extends Activity {
             web.restoreState(savedInstanceState);
         } else {
             Uri data = getIntent() != null ? getIntent().getData() : null;
-            if (!Karkas.estSet(this)) karkas.pokazat("net");
+            // own screen from the first second, instead of a black window while the site answers
+            karkas.pokazat(Karkas.estSet(this) ? "proverka" : "net");
             web.loadUrl(data != null && HOST.equals(data.getHost()) ? data.toString() : HOME);
         }
     }
@@ -386,7 +397,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/1.9");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.0");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -412,6 +423,27 @@ public class MainActivity extends Activity {
         ((android.widget.FrameLayout) findViewById(R.id.popup_body)).removeView(p);
         popup.setVisibility(View.GONE);
         p.post(p::destroy);
+    }
+
+    /** The page loaded: hide the shell only if the page really has something on it. */
+    private void proveritSoderzhimoe(WebView view, String url, int popytka) {
+        view.evaluateJavascript("(function(){var b=document.body;return b?(b.innerText||'').trim().length+b.querySelectorAll('img,video,canvas,svg').length:0})()", r -> {
+            int n = 0;
+            try { n = Integer.parseInt(r == null ? "0" : r.replaceAll("[^0-9]", "")); } catch (Exception ignored) {}
+            if (loadFailed) return;
+            if (n >= 20) {
+                stranitsaGotova = true;
+                karkas.skryt();
+                karkas.zaplanirovatSnimok(view, url);
+            } else if (popytka < 4) {
+                view.postDelayed(() -> proveritSoderzhimoe(view, url, popytka + 1), 1500);
+            } else {
+                stranitsaGotova = true;
+                loadFailed = true;
+                karkas.pokazat("net");
+                karkas.neUdalos();
+            }
+        });
     }
 
     // ---------- called by the offline shell (Karkas) ----------

@@ -49,9 +49,12 @@ public class MainActivity extends Activity {
     private boolean loadFailed;
     private boolean stranitsaGotova;
     private final android.os.Handler zavis = new android.os.Handler(android.os.Looper.getMainLooper());
-    /** The site did not answer in 20 s: show the offline screen instead of an empty page. */
-    private final Runnable zavisCheck = () -> {
-        if (!stranitsaGotova) {
+    /** The site did not answer in 12 s (45 s if bytes are coming in): show the own screen instead of an empty page. */
+    private long zagruzkaS;
+    private final Runnable zavisCheck = new Runnable() {
+        @Override public void run() {
+            if (stranitsaGotova) return;
+            if (web.getProgress() >= 25 && System.currentTimeMillis() - zagruzkaS < 45000) { zavis.postDelayed(this, 5000); return; }
             loadFailed = true;
             web.stopLoading();
             progress.setVisibility(View.GONE);
@@ -101,7 +104,12 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> openExternal(Intent.createChooser(i, "Поделиться")));
         }
         private boolean onOurHost() {
-            String cur = w.getUrl();
+            // WebView methods may only be called on the UI thread; bridge calls arrive on the JavaBridge thread
+            final String[] box = {null};
+            final java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+            w.post(() -> { try { box[0] = w.getUrl(); } finally { done.countDown(); } });
+            try { if (!done.await(2, java.util.concurrent.TimeUnit.SECONDS)) return false; } catch (InterruptedException e) { return false; }
+            String cur = box[0];
             if (cur == null) return false;
             if (cur.startsWith("about:blank")) return true; // window.open("") + document.write from our page
             return HOST.equals(Uri.parse(cur).getHost());
@@ -111,7 +119,7 @@ public class MainActivity extends Activity {
         public void skachat(String url, String name) {
             if (!onOurHost() || url == null || !url.startsWith("https://" + HOST + "/")) return;
             final String n = name == null ? "" : name;
-            runOnUiThread(() -> download(url, w.getSettings().getUserAgentString(), n.isEmpty() ? null : "attachment; filename=\"" + n + "\"", null));
+            runOnUiThread(() -> download(w, url, w.getSettings().getUserAgentString(), n.isEmpty() ? null : "attachment; filename=\"" + n + "\"", null));
         }
         /** navigator.share({files}) */
         @android.webkit.JavascriptInterface
@@ -247,6 +255,7 @@ public class MainActivity extends Activity {
                 stranitsaGotova = false;
                 progress.setVisibility(View.VISIBLE);
                 zavis.removeCallbacks(zavisCheck);
+                zagruzkaS = System.currentTimeMillis();
                 zavis.postDelayed(zavisCheck, 12000);
             }
             @Override
@@ -332,7 +341,7 @@ public class MainActivity extends Activity {
                         fileCallback = cb; openFileChooser(params); return true;
                     }
                 });
-                p.setDownloadListener((url, ua, cd, mime, len) -> { download(url, ua, cd, mime); if (!url.startsWith("blob:")) closePopup(); });
+                p.setDownloadListener((url, ua, cd, mime, len) -> { download(p, url, ua, cd, mime); if (!url.startsWith("blob:")) closePopup(); });
                 openPopup(p);
                 ((WebView.WebViewTransport) resultMsg.obj).setWebView(p);
                 resultMsg.sendToTarget();
@@ -352,7 +361,7 @@ public class MainActivity extends Activity {
         android.content.IntentFilter f = new android.content.IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(downloadDone, f, Context.RECEIVER_EXPORTED); else registerReceiver(downloadDone, f);
 
-        web.setDownloadListener((url, ua, contentDisposition, mime, len) -> download(url, ua, contentDisposition, mime));
+        web.setDownloadListener((url, ua, contentDisposition, mime, len) -> download(web, url, ua, contentDisposition, mime));
 
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
@@ -397,7 +406,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.1");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.2");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -586,14 +595,14 @@ public class MainActivity extends Activity {
         }
     };
 
-    private void download(String url, String ua, String contentDisposition, String mime) {
+    private void download(WebView owner, String url, String ua, String contentDisposition, String mime) {
         try {
             String name = URLUtil.guessFileName(url, contentDisposition, mime);
             if (url.startsWith("blob:") || url.startsWith("data:")) {
                 String js = "(function(){fetch(" + org.json.JSONObject.quote(url) + ").then(function(x){return x.blob()}).then(function(b){"
                         + "var r=new FileReader();r.onload=function(){var s=r.result;ArgedaApp.saveFile(s.slice(s.indexOf(',')+1),b.type||" + org.json.JSONObject.quote(mime == null ? "" : mime) + "," + org.json.JSONObject.quote(name) + ")};r.readAsDataURL(b)})"
                         + ".catch(function(e){ArgedaApp.saveFailed(String(e))})})()";
-                web.evaluateJavascript(js, null);
+                owner.evaluateJavascript(js, null);
                 return;
             }
             String m = mime == null ? "" : mime;
@@ -749,7 +758,11 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (popupWeb != null) { if (popupWeb.canGoBack()) popupWeb.goBack(); else closePopup(); return; }
-        if (karkas.vidim()) { super.onBackPressed(); return; }
+        if (karkas.vidim()) {
+            // inside the own screens: step back to «Главная» first, then leave the app
+            karkas.view.evaluateJavascript("window.karkasNazad?window.karkasNazad():'net'", r -> { if (r == null || !r.contains("ok")) finish(); });
+            return;
+        }
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 

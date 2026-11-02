@@ -90,12 +90,13 @@ class Obnovlenie {
     private void predlozhit(String chto) {
         if (a.isFinishing() || readyApk == null) return;
         int skipped = sp.getInt("skip", 0);
-        if (skipped == readyCode && !sp.getBoolean("force", false)) return; // "later" pressed for this version; ask again next day
+        // "Позже" for this version: ask again a day later
+        if (skipped == readyCode && System.currentTimeMillis() - sp.getLong("skipT", 0) < 24 * 3600_000L) return;
         new AlertDialog.Builder(a)
                 .setTitle("Обновление ARGEDA AI " + readyName)
                 .setMessage((chto == null || chto.isEmpty() ? "Доступна новая версия приложения." : chto) + "\n\nУстановить сейчас? Это займёт несколько секунд.")
                 .setPositiveButton("Обновить", (d, w) -> ustanovit())
-                .setNegativeButton("Позже", (d, w) -> sp.edit().putInt("skip", readyCode).putLong("last", System.currentTimeMillis() - INTERVAL_MS + 24 * 3600_000L).apply())
+                .setNegativeButton("Позже", (d, w) -> sp.edit().putInt("skip", readyCode).putLong("skipT", System.currentTimeMillis()).apply())
                 .show();
     }
 

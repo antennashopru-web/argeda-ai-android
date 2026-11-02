@@ -227,7 +227,7 @@ var S = {
     function row(ic,t,s,attr){return '<button class="row" '+attr+'><span class="ic" style="background:var(--card2);display:flex;align-items:center;justify-content:center">'+svg(ic)+'</span><span class="x"><b>'+t+'</b><small>'+s+'</small></span>'+svg('dalee')+'</button>'}
     return '<div style="height:18px"></div><h2 class="h">Кабинет</h2><p class="sub">Баланс, история и настройки хранятся на сервере</p>'+noteHtml()
       +'<div class="list">'+row('user','Мой кабинет','Баланс, история, профиль','data-site="/kabinet"')
-      +row('koshelek','Пополнить токены','Пакеты 990, 2 990 и 9 990 ₽','data-site="/tseny"')
+      +row('koshelek','Пополнить токены','Пакеты токенов и оплата','data-site="/tseny"')
       +row('kniga','Модели и цены','Что умеет каждая модель','data-site="/modeli"')
       +row('pochta','Написать нам','info@argeda.ru','data-act="pochta"')+'</div>'
       +'<div class="foot">Приложение ARGEDA AI'+(v?' · версия '+esc(v):'')+'</div>';
@@ -284,6 +284,7 @@ document.addEventListener('click',function(e){
 function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povtorit(); }
 
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
+window.karkasNazad=function(){ if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
 sostoyanie(K ? K.sostoyanie() : 'proverka');
 show('glavnaya');
 setInterval(function(){ if(!document.hidden && K && K.set() && st==='net'){ sostoyanie('proverka'); K.povtorit(); } }, 30000);

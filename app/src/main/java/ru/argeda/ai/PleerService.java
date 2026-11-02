@@ -111,6 +111,7 @@ public class PleerService extends Service {
     }
 
     static void send(Context c, String action, String title, int posMs, int durMs) {
+        if (Build.VERSION.SDK_INT < 26) return; // Android 7: no channels / foreground start API; the page plays on its own
         Intent i = new Intent(c, PleerService.class).setAction(action);
         if (title != null) i.putExtra("title", title);
         i.putExtra("pos", posMs).putExtra("dur", durMs);

@@ -3,182 +3,291 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ARGEDA AI</title>
+<title>ARGEDA</title>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--bg:#0f1113;--card:#181b1f;--card2:#1f2328;--line:#2a2f36;--text:#f2f2f2;--muted:#9aa0ad;--accent:#ffb35c;--ok:#5fd38d}
+:root{--bg:#0b0c0e;--card:#141619;--card2:#1b1e22;--line:#24282e;--text:#f4f4f5;--muted:#9aa0ad;--a1:#ffb35c;--a2:#ff7a3d;--ok:#5fd38d;--bad:#ff5d5d}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{padding:16px 16px 40px;max-width:640px;margin:0 auto}
-header{display:flex;align-items:center;gap:10px;margin:4px 0 16px}
-header img{width:36px;height:36px;border-radius:9px}
-header b{font-size:19px;letter-spacing:.3px}
-header span{margin-left:auto;color:var(--muted);font-size:12px}
-.status{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:22px}
-.status h1{font-size:17px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
-.dot{width:9px;height:9px;border-radius:50%;background:#e5534b;flex:none}
-.proverka .dot{background:var(--accent);animation:pulse 1s infinite alternate}
-@keyframes pulse{to{opacity:.3}}
-.status p{margin:0 0 12px;color:var(--muted);font-size:14px}
-button{font:inherit;border:0;border-radius:12px;cursor:pointer}
-.btn{background:var(--accent);color:#1a1205;font-weight:600;padding:11px 18px;width:100%}
-.btn:disabled{opacity:.6}
-h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 10px;font-weight:600}
-section{margin-bottom:24px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 4px 10px;text-align:center;color:var(--text);position:relative;min-width:0}
-.tile svg{width:26px;height:26px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.tile div{font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile i{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--ok)}
-.files{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.f{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.f img{width:100%;height:100%;object-fit:cover;display:block}
-.f svg{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.f .n{position:absolute;left:0;right:0;bottom:0;padding:14px 6px 5px;font-size:11px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Onest,system-ui,sans-serif}
+body{padding-bottom:110px;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+.wrap{max-width:640px;margin:0 auto;padding:0 18px}
+.h{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.2px;line-height:.95}
+/* top bar */
+.top{position:sticky;top:0;z-index:5;background:rgba(11,12,14,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:10px;height:58px}
+.top img{width:30px;height:30px;border-radius:8px}
+.top b{font-family:Onest;font-weight:800;font-size:20px;letter-spacing:.5px}
+.chip{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 11px}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.chip.proverka i{background:var(--a1);animation:pulse .9s infinite alternate}
+.chip.ok i{background:var(--ok)}
+@keyframes pulse{to{opacity:.25}}
+/* hero */
+.hero{position:relative;margin:18px 0 26px;border-radius:26px;overflow:hidden;background:#111214;border:1px solid var(--line)}
+.art{height:170px;position:relative;background:radial-gradient(120% 90% at 85% 10%,rgba(255,150,80,.45),transparent 55%),linear-gradient(180deg,#1d1612,#111214)}
+.art:before{content:"";position:absolute;inset:-40% -10% 0 30%;background:repeating-conic-gradient(from 200deg at 80% 0%,rgba(255,200,150,.16) 0 3deg,transparent 3deg 9deg);-webkit-mask:linear-gradient(180deg,#000 30%,transparent);mask:linear-gradient(180deg,#000 30%,transparent)}
+.sun{position:absolute;right:52px;top:52px;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffd2a1,#ff6a3d 70%);box-shadow:0 0 40px 10px rgba(255,120,60,.45)}
+.film{position:absolute;left:44%;top:92px;width:150px;height:14px;transform:rotate(-12deg);background:repeating-linear-gradient(90deg,#8a4a35 0 34px,#3b2a24 34px 38px);border-radius:2px;box-shadow:0 0 18px rgba(255,140,90,.35)}
+.hero .in{padding:0 20px 22px}
+.hero h1{font-size:46px;margin:0 0 10px}
+.hero p{margin:0 0 18px;color:#c9ccd3}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 28px;border-radius:99px;font-weight:600;font-size:16px}
+.btn.a{background:linear-gradient(90deg,var(--a1),var(--a2));color:#1b0f05;box-shadow:0 8px 30px rgba(255,140,70,.35)}
+.btn.b{background:var(--card2);border:1px solid var(--line);margin-top:10px}
+.btn.w{width:100%}
+.btn:disabled{opacity:.55}
+/* notice */
+.note{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(135deg,rgba(255,179,92,.12),rgba(255,122,61,.05));border:1px solid rgba(255,179,92,.28);border-radius:18px;padding:14px 16px;margin:0 0 24px}
+.note svg{flex:none;width:22px;height:22px;stroke:var(--a1);fill:none;stroke-width:2;margin-top:2px}
+.note b{display:block;margin-bottom:2px}
+.note span{color:#c9ccd3;font-size:14px}
+.note button{color:var(--a1);font-weight:600;margin-top:6px;font-size:14px}
+h2.h{font-size:30px;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 16px}
+/* section cards */
+.cards{display:grid;gap:12px;margin-bottom:28px}
+.card{position:relative;display:block;width:100%;text-align:left;border-radius:22px;padding:16px 64px 16px 16px;background:var(--card);border:1px solid var(--line);overflow:hidden}
+.card:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,var(--c1) -20%,transparent 55%);opacity:.22}
+.card .ic{position:relative;width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px -6px var(--c2)}
+.ic svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card .t{position:relative;font-size:28px;margin:12px 0 4px}
+.card .d{position:relative;color:#c9ccd3;font-size:14px}
+.card .go{position:absolute;right:14px;bottom:16px;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:center;justify-content:center}
+.go svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini .card{padding:14px;border-radius:18px}
+.mini .ic{width:42px;height:42px;border-radius:12px}.mini .ic svg{width:22px;height:22px}
+.mini .t{font-size:22px;margin:10px 0 0}
+/* section screen */
+.back{display:flex;align-items:center;gap:6px;color:var(--muted);margin:16px 0 10px;font-size:14px}
+.back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.shead{position:relative;border-radius:24px;padding:20px;overflow:hidden;background:var(--card);border:1px solid var(--line);margin-bottom:16px}
+.shead:before{content:"";position:absolute;inset:0;background:radial-gradient(90% 120% at 0% 0%,var(--c1),transparent 60%);opacity:.3}
+.shead .t{position:relative;font-size:44px;margin:14px 0 6px}
+.shead p{position:relative;margin:0;color:#c9ccd3}
+.uses{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.uses span{font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 12px;color:#d6d8de}
+textarea{width:100%;min-height:130px;resize:vertical;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:14px 16px;font:inherit;outline:none}
+textarea:focus{border-color:rgba(255,179,92,.6)}
+.hint{color:var(--muted);font-size:13px;margin:8px 2px 14px}
+/* files */
+.files{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.f{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.f img{width:100%;height:100%;object-fit:cover}
+.f>svg{width:30px;height:30px;stroke:var(--a1);fill:none;stroke-width:1.8}
+.f .n{position:absolute;left:0;right:0;bottom:0;padding:14px 6px 5px;font-size:11px;background:linear-gradient(transparent,rgba(0,0,0,.8));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .f .sh{position:absolute;top:5px;right:5px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
-.f .sh svg{width:15px;height:15px;stroke:#fff}
-.list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--line);color:var(--text);width:100%;background:none;text-align:left;border-radius:0}
+.f .sh svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2}
+.list{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:24px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
-.row div{flex:1;min-width:0}
+.row .x{flex:1;min-width:0}
 .row b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row small{color:var(--muted);font-size:12px}
-.row svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;flex:none}
-.empty{color:var(--muted);font-size:14px;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:14px}
-.link{background:none;color:var(--accent);padding:8px 0 0;font-size:14px}
-.more{display:block;margin-top:8px;background:var(--card2);color:var(--text);padding:10px;width:100%}
-footer{color:var(--muted);font-size:12px;text-align:center;margin-top:8px}
-@media (max-width:360px){.grid{grid-template-columns:repeat(3,1fr)}}
+.row>svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;flex:none}
+.row .ic{width:36px;height:36px;border-radius:10px;flex:none}.row .ic svg{width:18px;height:18px}
+.row .del{color:var(--muted);font-size:13px;padding:6px}
+.empty{color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:16px;padding:14px;margin-bottom:24px}
+h3{font-size:13px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;font-weight:600}
+/* bottom nav */
+nav{position:fixed;left:12px;right:12px;bottom:12px;z-index:6;max-width:520px;margin:0 auto;height:70px;display:flex;align-items:center;justify-content:space-around;background:rgba(22,24,28,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:22px}
+nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--muted);min-width:64px}
+nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
+nav button.on{color:var(--a1)}
+nav .plus{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--a1),var(--a2));display:flex;align-items:center;justify-content:center;color:#1b0f05;margin-top:-6px}
+nav .plus svg{stroke:#1b0f05;stroke-width:2.6}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#2a2e35;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+.toast.on{opacity:1}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
 </style>
 </head>
 <body>
-<header><img src="logo.png" alt=""><b>ARGEDA AI</b><span id="ver"></span></header>
-
-<div class="status" id="status">
-  <h1><span class="dot"></span><span id="st-title">Сайт сейчас недоступен</span></h1>
-  <p id="st-text">Приложение работает и без него: ваши файлы и сохранённые страницы ниже. Связь проверяется сама.</p>
-  <button class="btn" id="retry">Повторить</button>
-</div>
-
-<section>
-  <h2>Разделы</h2>
-  <div class="grid" id="razdely"></div>
-</section>
-
-<section>
-  <h2>Сохранено на телефоне</h2>
-  <div id="fayly"></div>
-</section>
-
-<section>
-  <h2>Недавние страницы</h2>
-  <div id="stranitsy"></div>
-</section>
-
-<footer>Эта часть приложения работает без интернета</footer>
+<div class="top"><div class="wrap"><img src="logo.png" alt=""><b>ARGEDA</b><span class="chip" id="chip"><i></i><span id="chip-t">Подключаюсь…</span></span></div></div>
+<main class="wrap" id="app"></main>
+<nav id="nav">
+  <button data-go="glavnaya"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>Главная</button>
+  <button data-go="sozdat"><span class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Создать</button>
+  <button data-go="fayly"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Мои файлы</button>
+  <button data-go="kabinet"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/></svg>Кабинет</button>
+</nav>
+<div class="toast" id="toast"></div>
 
 <script>
 (function(){
-var K = window.ArgedaKarkas;
-var I = {
-  video:'<path d="M3 6h12v12H3z"/><path d="M15 10l6-3v10l-6-3"/>',
+var K = window.ArgedaKarkas || null;
+var G = {
+  video:'<path d="M3 7h12v10H3z"/><path d="M15 11l6-3v8l-6-3"/>',
   kartinki:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/>',
   muzyka:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   golos:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',
+  guby:'<path d="M3 12c3-4 6-5 9-3 3-2 6-1 9 3-3 4-6 6-9 6s-6-2-9-6z"/><path d="M3 12h18"/>',
   kino:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 5v4M12 5v4M17 5v4"/>',
-  nastavnik:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8"/>',
-  wb:'<path d="M4 7h16l-1.5 12h-13z"/><path d="M9 7a3 3 0 016 0"/>',
-  papka:'<path d="M3 6h6l2 2h10v11H3z"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8"/>',
+  rabota:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/>',
   fayl:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
   share:'<path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"/>',
-  dalee:'<path d="M9 6l6 6-6 6"/>'
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  dalee:'<path d="M9 6l6 6-6 6"/>',
+  nazad:'<path d="M15 6l-6 6 6 6"/>',
+  wifi:'<path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><circle cx="12" cy="19.5" r="1"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/>',
+  koshelek:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12h2M3 9h18"/>',
+  pochta:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  kniga:'<path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-5a3 3 0 00-3 3"/>'
 };
-function svg(k){return '<svg viewBox="0 0 24 24">'+I[k]+'</svg>'}
+function svg(k){return '<svg viewBox="0 0 24 24">'+G[k]+'</svg>'}
+
+var R = [
+  {k:'video',t:'Видео',d:'Из текста и фото, аватары и движение',p:'/video',c:['#ff5b6e','#ff3d3d'],
+   u:['Ролик из текста','Оживить фото','Аватар говорит','Реклама товара'],ph:'Например: кот в скафандре идёт по Луне, камера медленно облетает его, кинематографичный свет'},
+  {k:'kartinki',t:'Картинки',d:'Нарисовать, заменить фон, убрать лишнее',p:'/kartinki',c:['#b26cff','#7c3aed'],
+   u:['Нарисовать по описанию','Заменить фон','Убрать лишнее','Улучшить качество'],ph:'Например: уютная кофейня в дождливом Париже, акварель, тёплый свет из окон'},
+  {k:'muzyka',t:'Музыка',d:'Песня по описанию или вашему тексту, вокал',p:'/muzyka',c:['#2fd8f0','#0ea5e9'],
+   u:['Песня по описанию','Песня на ваш текст','Поздравление','Минус и вокал'],ph:'Например: весёлая песня на день рождения маме, поп, женский вокал, припев «ты у нас одна»'},
+  {k:'golos',t:'Голос',d:'Озвучка текста и расшифровка записей',p:'/golos',c:['#3ee0a0','#10b981'],
+   u:['Озвучить текст','Расшифровать запись','Голос для ролика'],ph:'Вставьте текст, который нужно озвучить'},
+  {k:'guby',t:'Губы и речь',d:'Человек в кадре говорит ваш текст',p:'/guby',c:['#ff7ac0','#ec4899'],
+   u:['Говорящее фото','Озвучить видео','Перевод речи'],ph:'Что должен сказать человек в кадре'},
+  {k:'kino',t:'Киностудия',d:'Фильм, клип и реклама — от идеи до монтажа',p:'/kino',c:['#ffc84a','#f59e0b'],
+   u:['Короткий фильм','Клип на песню','Рекламный ролик'],ph:'Идея фильма: о чём он, герои, настроение, длительность'},
+  {k:'chat',t:'Тексты и чат',d:'Описания, ответы покупателям, разбор задач',p:'/chat',c:['#8b93ff','#6366f1'],
+   u:['Описание товара','Ответ покупателю','Пост и реклама','Разобрать задачу'],ph:'Например: напиши описание для детской куртки на маркетплейс, 1000 знаков'},
+  {k:'rabota',t:'Рабочие панели',d:'Карточки товара, магазины, расчёты',p:'/rabota',c:['#3fe0cf','#14b8a6'],
+   u:['Карточка для WB и Ozon','Инфографика','Документы'],ph:'Какой товар: название, главные преимущества, для какого маркетплейса'}
+];
+function byK(k){for(var i=0;i<R.length;i++) if(R[i].k===k) return R[i]}
+function vars(r){return '--c1:'+r.c[0]+';--c2:'+r.c[1]}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function parse(s){try{return JSON.parse(s)||[]}catch(e){return []}}
-function kogda(t){
-  var d=new Date(t), now=new Date(), m=Math.round((now-d)/60000);
-  if(m<1) return 'только что'; if(m<60) return m+' мин назад';
-  var h=Math.round(m/60); if(h<24) return h+' ч назад';
-  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+function kogda(t){var m=Math.round((Date.now()-t)/60000); if(m<1)return 'только что'; if(m<60)return m+' мин назад'; var h=Math.round(m/60); if(h<24)return h+' ч назад'; return new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2600)}
+
+var st = 'proverka';               // proverka | net
+function online(){ return st!=='net' }
+function zadaniya(){ return K ? parse(K.zadaniya()) : [] }
+
+// ---------- screens ----------
+function noteHtml(){
+  if(st!=='net') return '';
+  var set = K ? K.set() : navigator.onLine, n = zadaniya().length;
+  return '<div class="note">'+svg('wifi')+'<div><b>'+(set?'Сервер сейчас не отвечает':'Нет интернета')+'</b><span>'
+    +(set?'Можно подготовить задание — оно отправится, когда сервер заработает. Связь проверяется сама.':'Включите интернет — приложение подключится само. Задания можно готовить уже сейчас.')
+    +(n?' Ждут отправки: '+n+'.':'')+'</span><br><button data-act="retry">Проверить сейчас</button></div></div>';
 }
+function card(r){return '<button class="card" style="'+vars(r)+'" data-r="'+r.k+'"><div class="ic">'+svg(r.k)+'</div><div class="t h">'+r.t+'</div><div class="d">'+r.d+'</div><span class="go">'+svg('arrow')+'</span></button>'}
 
-var RAZDELY=[
-  ['Видео','/video','video'],['Картинки','/kartinki','kartinki'],['Музыка','/muzyka','muzyka'],['Голос','/golos','golos'],
-  ['Кино','/kino','kino'],['Наставник','/nastavnik','nastavnik'],['Карточки','/instrument/infografika','wb'],['Мои файлы','/moi-fayly','papka']
-];
-
-function risovat(){
-  var stranitsy = K ? parse(K.stranitsy()) : [];
-  var est = {}; stranitsy.forEach(function(s){est[s.path]=1});
-
-  document.getElementById('razdely').innerHTML = RAZDELY.map(function(r){
-    return '<button class="tile" data-p="'+r[1]+'">'+(est[r[1]]?'<i title="есть копия"></i>':'')+svg(r[2])+'<div>'+r[0]+'</div></button>';
-  }).join('');
-
-  var fayly = K ? parse(K.fayly()) : [];
-  var box = document.getElementById('fayly');
-  if(!fayly.length){
-    box.innerHTML='<div class="empty">Здесь появятся картинки, видео и музыка, которые вы сохраните с сайта. Они открываются без интернета.</div><button class="link" id="gal">Открыть галерею телефона</button>';
-  } else {
-    var pokaz = box.dataset.vse ? fayly : fayly.slice(0,9);
-    box.innerHTML='<div class="files">'+pokaz.map(function(f,i){
-      var m=f.mime||'', vid;
-      if(m.indexOf('image/')===0) vid='<img loading="lazy" src="'+esc(f.uri)+'" alt="" onerror="this.style.display=\'none\'">';
-      else vid=svg(m.indexOf('video/')===0?'video':m.indexOf('audio/')===0?'muzyka':'fayl');
-      return '<div class="f" data-i="'+i+'">'+vid+'<span class="sh" data-s="'+i+'">'+svg('share')+'</span><div class="n">'+esc(f.name)+'</div></div>';
-    }).join('')+'</div>'+(fayly.length>9&&!box.dataset.vse?'<button class="more" id="vse">Показать все ('+fayly.length+')</button>':'');
-    box._f = pokaz;
+var S = {
+  glavnaya:function(){
+    return '<section class="hero"><div class="art"><span class="sun"></span><span class="film"></span></div><div class="in">'
+      +'<h1 class="h">Студия нейросетей</h1><p>Кино, песни, озвучка и картинки — лучшие мировые модели на русском. Цена видна до запуска</p>'
+      +'<button class="btn a" data-go="sozdat">Начать создавать</button><br><button class="btn b" data-site="/modeli">Все модели и цены</button></div></section>'
+      +noteHtml()
+      +'<h2 class="h">Что нужно сделать</h2><p class="sub">Внутри каждого раздела — все инструменты для этой задачи</p>'
+      +'<div class="cards">'+R.map(card).join('')+'</div>'
+      +'<div class="foot">ARGEDA AI · приложение открывается и без интернета</div>';
+  },
+  sozdat:function(){
+    return '<div style="height:18px"></div><h2 class="h">Что создаём?</h2><p class="sub">Выберите раздел и опишите задачу'+(st==='net'?' — отправим, когда сервер заработает':'')+'</p>'
+      +noteHtml()+'<div class="mini">'+R.map(function(r){return '<button class="card" style="'+vars(r)+'" data-r="'+r.k+'"><div class="ic">'+svg(r.k)+'</div><div class="t h">'+r.t+'</div></button>'}).join('')+'</div>';
+  },
+  razdel:function(k){
+    var r=byK(k); if(!r) return S.glavnaya();
+    var chern = (sessionStorage.getItem('ch-'+k)||'');
+    return '<button class="back" data-go="'+(prev||'glavnaya')+'">'+svg('nazad')+'Назад</button>'
+      +'<div class="shead" style="'+vars(r)+'"><div class="ic" style="width:60px;height:60px;border-radius:17px;'+vars(r)+';background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:center;justify-content:center">'+svg(r.k)+'</div><div class="t h">'+r.t+'</div><p>'+r.d+'</p></div>'
+      +'<div class="uses">'+r.u.map(function(x){return '<span>'+x+'</span>'}).join('')+'</div>'
+      +'<textarea id="prompt" placeholder="'+esc(r.ph)+'">'+esc(chern)+'</textarea>'
+      +'<div class="hint">'+(st==='net'?'Сервер сейчас не отвечает: задание сохранится в телефоне и откроется в разделе, как только связь вернётся.':'Откроем раздел и вставим ваш текст — останется выбрать модель и нажать «Создать».')+'</div>'
+      +'<button class="btn a w" data-act="sozdat" data-k="'+r.k+'">'+(st==='net'?'Сохранить задание':'Продолжить')+'</button>'
+      +'<button class="btn b w" data-site="'+r.p+'">Открыть раздел'+(st==='net'?' (нужна связь)':'')+'</button>';
+  },
+  fayly:function(){
+    var f = K ? parse(K.fayly()) : [], z = zadaniya(), s = K ? parse(K.stranitsy()) : [];
+    var h='<div style="height:18px"></div><h2 class="h">Мои файлы</h2><p class="sub">Всё, что сохранено в телефоне, открывается без интернета</p>';
+    if(z.length){
+      h+='<h3>Задания ждут отправки</h3><div class="list">'+z.map(function(x,i){var r=byK(x.k)||R[0];
+        return '<div class="row"><span class="ic" style="'+vars(r)+';background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:center;justify-content:center">'+svg(r.k)+'</span><button class="x" data-z="'+i+'" style="text-align:left"><b>'+esc(x.text)+'</b><small>'+r.t+' · '+kogda(x.t)+(st==='net'?' · отправится, когда будет связь':' · нажмите, чтобы отправить')+'</small></button><button class="del" data-zd="'+i+'">Убрать</button></div>'}).join('')+'</div>';
+    }
+    h+='<h3>Сохранено с сайта</h3>';
+    h+= f.length ? '<div class="files">'+f.map(function(x,i){var m=x.mime||'',v;
+          if(m.indexOf('image/')===0) v='<img loading="lazy" src="'+esc(x.uri)+'" alt="" onerror="this.style.display=\'none\'">';
+          else v=svg(m.indexOf('video/')===0?'video':m.indexOf('audio/')===0?'muzyka':'fayl');
+          return '<div class="f" data-f="'+i+'">'+v+'<span class="sh" data-fs="'+i+'">'+svg('share')+'</span><div class="n">'+esc(x.name)+'</div></div>'}).join('')+'</div>'
+        : '<div class="empty">Здесь появятся картинки, видео и музыка, которые вы сохраните с сайта.</div>';
+    h+='<button class="btn b w" data-act="galereya" style="margin:0 0 6px">Открыть галерею телефона</button>';
+    h+='<h3>Недавние страницы</h3>';
+    h+= s.length ? '<div class="list">'+s.map(function(x){return '<button class="row" data-kop="'+esc(x.path)+'"><span class="x"><b>'+esc((x.title||x.path).replace(/\s*[|·—-]\s*ARGEDA.*$/i,''))+'</b><small>'+esc(x.path)+' · '+kogda(x.t)+'</small></span>'+svg('dalee')+'</button>'}).join('')+'</div>'
+        : '<div class="empty">Страницы, которые вы открываете на сайте, сохраняются сами — их можно смотреть без интернета.</div>';
+    h+='<button class="btn b w" data-site="/biblioteka">Моя библиотека на сайте</button>';
+    window._f=f; return h;
+  },
+  kabinet:function(){
+    var v = K ? K.versiya() : '';
+    function row(ic,t,s,attr){return '<button class="row" '+attr+'><span class="ic" style="background:var(--card2);display:flex;align-items:center;justify-content:center">'+svg(ic)+'</span><span class="x"><b>'+t+'</b><small>'+s+'</small></span>'+svg('dalee')+'</button>'}
+    return '<div style="height:18px"></div><h2 class="h">Кабинет</h2><p class="sub">Баланс, история и настройки хранятся на сервере</p>'+noteHtml()
+      +'<div class="list">'+row('user','Мой кабинет','Баланс, история, профиль','data-site="/kabinet"')
+      +row('koshelek','Пополнить токены','Пакеты 990, 2 990 и 9 990 ₽','data-site="/tseny"')
+      +row('kniga','Модели и цены','Что умеет каждая модель','data-site="/modeli"')
+      +row('pochta','Написать нам','info@argeda.ru','data-act="pochta"')+'</div>'
+      +'<div class="foot">Приложение ARGEDA AI'+(v?' · версия '+esc(v):'')+'</div>';
   }
+};
 
-  var sb = document.getElementById('stranitsy');
-  sb.innerHTML = stranitsy.length
-    ? '<div class="list">'+stranitsy.map(function(s){
-        return '<button class="row" data-k="'+esc(s.path)+'"><div><b>'+esc((s.title||s.path).replace(/\s*[|·—-]\s*ARGEDA AI\s*$/i,''))+'</b><small>'+esc(s.path)+' · '+kogda(s.t)+'</small></div>'+svg('dalee')+'</button>';
-      }).join('')+'</div>'
-    : '<div class="empty">Страницы сайта, которые вы открывали, сохраняются сами — их можно будет посмотреть без интернета.</div>';
+var cur='glavnaya', curK=null, prev=null;
+function show(name,k){
+  if(cur!=='razdel') prev=cur;
+  cur=name; curK=k||null;
+  var a=document.getElementById('app');
+  a.innerHTML = name==='razdel' ? S.razdel(k) : S[name]();
+  [].forEach.call(document.querySelectorAll('nav button'),function(b){b.classList.toggle('on',b.dataset.go===(name==='razdel'?prev:name))});
+  window.scrollTo(0,0);
 }
-
-document.addEventListener('click', function(e){
-  var t=e.target.closest('button,.f,.sh'); if(!t||!K) return;
-  if(t.id==='retry'){ sostoyanie('proverka'); K.povtorit(); return; }
-  if(t.id==='gal'){ K.galereya(); return; }
-  if(t.id==='vse'){ document.getElementById('fayly').dataset.vse='1'; risovat(); return; }
-  if(t.dataset.p){ K.razdel(t.dataset.p); return; }
-  if(t.dataset.k){ K.kopiya(t.dataset.k); return; }
-  var f=document.getElementById('fayly')._f||[];
-  if(t.dataset.s!=null){ e.stopPropagation(); var x=f[+t.dataset.s]; if(x) K.podelitsya(x.uri,x.mime); return; }
-  if(t.dataset.i!=null){ var y=f[+t.dataset.i]; if(y) K.otkrytFayl(y.uri,y.mime); }
-});
+function redraw(){ var y=window.scrollY, p=document.getElementById('prompt'), t=p&&p.value; show(cur,curK); if(p){var q=document.getElementById('prompt'); if(q) q.value=t;} window.scrollTo(0,y); }
 
 function sostoyanie(s){
-  var box=document.getElementById('status'), b=document.getElementById('retry');
-  var set = K ? K.set() : navigator.onLine;
-  if(s==='proverka'){
-    box.className='status proverka';
-    document.getElementById('st-title').textContent='Проверяю связь…';
-    b.disabled=true; b.textContent='Подключаюсь…';
-  } else {
-    box.className='status';
-    document.getElementById('st-title').textContent = set ? 'Сайт сейчас недоступен' : 'Нет интернета';
-    document.getElementById('st-text').textContent = set
-      ? 'Приложение работает и без него: ваши файлы и сохранённые страницы ниже. Связь проверяется сама каждые 30 секунд.'
-      : 'Включите мобильный интернет или Wi‑Fi — приложение подключится само. Пока можно посмотреть сохранённое ниже.';
-    b.disabled=false; b.textContent='Повторить';
-  }
+  st = s==='proverka' ? 'proverka' : 'net';
+  var c=document.getElementById('chip');
+  c.className='chip'+(st==='proverka'?' proverka':'');
+  document.getElementById('chip-t').textContent = st==='proverka' ? 'Подключаюсь…' : ((K?K.set():navigator.onLine) ? 'Сервер недоступен' : 'Нет интернета');
 }
 
-// called by the app
-window.karkasObnovit=function(s){ sostoyanie(s); risovat(); };
+document.addEventListener('input',function(e){ if(e.target.id==='prompt'&&curK) try{sessionStorage.setItem('ch-'+curK,e.target.value)}catch(x){} });
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-go],[data-r],[data-site],[data-act],[data-z],[data-zd],[data-f],[data-fs],[data-kop]'); if(!t) return;
+  var d=t.dataset;
+  if(d.go){ show(d.go); return; }
+  if(d.r){ show('razdel',d.r); return; }
+  if(d.site){ if(!K) return; if(st==='net'){ K.kopiya(d.site); retry(); return; } K.razdel(d.site,''); return; }
+  if(d.kop){ K&&K.kopiya(d.kop); return; }
+  if(d.f!=null&&!e.target.closest('[data-fs]')){ var x=window._f[+d.f]; if(x&&K) K.otkrytFayl(x.uri,x.mime); return; }
+  if(d.fs!=null){ var y=window._f[+d.fs]; if(y&&K) K.podelitsya(y.uri,y.mime); return; }
+  if(d.zd!=null){ K&&K.ubratZadanie(+d.zd); redraw(); return; }
+  if(d.z!=null){ if(st==='net'){ toast('Отправится, когда сервер заработает'); retry(); return; } K&&K.otpravitZadanie(+d.z); return; }
+  var a=d.act;
+  if(a==='retry'){ retry(); return; }
+  if(a==='galereya'){ K&&K.galereya(); return; }
+  if(a==='pochta'){ K&&K.pochta(); return; }
+  if(a==='sozdat'){
+    var r=byK(d.k), txt=(document.getElementById('prompt').value||'').trim();
+    if(st==='net'){
+      if(!txt){ toast('Опишите задачу — сохраним её'); return; }
+      K&&K.dobavitZadanie(r.k, r.p, txt);
+      try{sessionStorage.removeItem('ch-'+r.k)}catch(x){}
+      toast('Задание сохранено — отправим, когда сервер заработает');
+      show('fayly'); return;
+    }
+    K&&K.razdel(r.p, txt); return;
+  }
+});
 
-if(K){ var v=K.versiya(); if(v) document.getElementById('ver').textContent='версия '+v; }
-sostoyanie('net'); risovat();
+function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povtorit(); }
 
-// automatic check while the shell is open
-setInterval(function(){
-  if(document.hidden||!K) return;
-  if(K.set() && !document.getElementById('retry').disabled){ sostoyanie('proverka'); K.povtorit(); }
-}, 30000);
-document.addEventListener('visibilitychange', function(){ if(!document.hidden) risovat(); });
+window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
+sostoyanie(K ? K.sostoyanie() : 'proverka');
+show('glavnaya');
+setInterval(function(){ if(!document.hidden && K && K.set() && st==='net'){ sostoyanie('proverka'); K.povtorit(); } }, 30000);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) redraw(); });
 })();
 </script>
 </body>

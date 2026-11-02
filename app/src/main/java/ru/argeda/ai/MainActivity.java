@@ -397,7 +397,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.0");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.1");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -433,8 +433,11 @@ public class MainActivity extends Activity {
             if (loadFailed) return;
             if (n >= 20) {
                 stranitsaGotova = true;
+                boolean bylKarkas = karkas.vidim();
                 karkas.skryt();
                 karkas.zaplanirovatSnimok(view, url);
+                if (zhdetTekst != null) vstavitTekst(view, url);
+                else if (bylKarkas) predlozhitZadaniya();
             } else if (popytka < 4) {
                 view.postDelayed(() -> proveritSoderzhimoe(view, url, popytka + 1), 1500);
             } else {
@@ -454,6 +457,48 @@ public class MainActivity extends Activity {
     }
     boolean saytLezhit() { return loadFailed; }
     void otkrytSayt(String url) { karkas.pokazat("proverka"); web.loadUrl(url); }
+
+    /** Text prepared in the app, typed into the section's first text field once the page is up. */
+    private String zhdetTekst, zhdetPut;
+    void otkrytRazdel(String path, String prompt) {
+        zhdetTekst = prompt == null || prompt.trim().isEmpty() ? null : prompt.trim();
+        zhdetPut = path;
+        otkrytSayt("https://" + HOST + path + (path.contains("?") ? "&" : "?") + "source=app");
+    }
+    private void vstavitTekst(WebView view, String url) {
+        if (zhdetTekst == null) return;
+        Uri u = Uri.parse(url);
+        String put = zhdetPut == null ? "" : zhdetPut.split("\\?")[0];
+        if (u.getPath() == null || !u.getPath().startsWith(put)) return;
+        String t = zhdetTekst; zhdetTekst = null;
+        view.evaluateJavascript("(function(t){var n=0;function go(){var el=document.querySelector('textarea')||document.querySelector('input[type=text],input:not([type])');"
+                + "if(!el){if(++n<20)setTimeout(go,500);return}"
+                + "var p=el.tagName=='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;"
+                + "Object.getOwnPropertyDescriptor(p,'value').set.call(el,t);el.dispatchEvent(new Event('input',{bubbles:true}));"
+                + "el.scrollIntoView({block:'center'});el.focus()}go()})(" + org.json.JSONObject.quote(t) + ")", null);
+    }
+
+    /** The site is back: offer the tasks prepared while it was down. */
+    private boolean zadaniyaPredlozheny;
+    private void predlozhitZadaniya() {
+        org.json.JSONArray z = karkas.zadaniya();
+        if (z.length() == 0 || zadaniyaPredlozheny) return;
+        zadaniyaPredlozheny = true;
+        String[] items = new String[z.length()];
+        for (int i = 0; i < z.length(); i++) {
+            String t = z.optJSONObject(i).optString("text");
+            items[i] = t.length() > 70 ? t.substring(0, 70) + "…" : t;
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Сервер снова работает — отправить задание?")
+                .setItems(items, (d, i) -> {
+                    org.json.JSONObject o = karkas.vzyatZadanie(i);
+                    if (o != null) otkrytRazdel(o.optString("path", "/"), o.optString("text", ""));
+                    zadaniyaPredlozheny = false;
+                })
+                .setNegativeButton("Позже", null)
+                .show();
+    }
     void otkrytOkno(WebView p, String title) { openPopup(p); popupTitle.setText(title); }
     void zakrytOkno() { closePopup(); }
 

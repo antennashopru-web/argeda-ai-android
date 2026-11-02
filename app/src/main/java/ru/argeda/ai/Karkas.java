@@ -35,6 +35,7 @@ class Karkas {
     private final android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable snimokZadacha;
     private boolean zagruzhen;
+    private String sost = "proverka";
 
     Karkas(MainActivity a, WebView v) {
         this.a = a; this.view = v;
@@ -57,6 +58,7 @@ class Karkas {
 
     /** Show the shell. sostoyanie: "net" — no connection, "proverka" — checking. */
     void pokazat(String sostoyanie) {
+        sost = sostoyanie;
         if (!zagruzhen) { view.loadUrl("file:///android_asset/karkas/index.html"); zagruzhen = true; }
         else js("window.karkasObnovit&&window.karkasObnovit(" + JSONObject.quote(sostoyanie) + ")");
         view.setVisibility(View.VISIBLE);
@@ -65,7 +67,7 @@ class Karkas {
     void skryt() { view.setVisibility(View.GONE); }
 
     /** The site failed again while the shell is open: tell the page so the button comes back. */
-    void neUdalos() { if (vidim()) js("window.karkasObnovit&&window.karkasObnovit('net')"); }
+    void neUdalos() { sost = "net"; if (vidim()) js("window.karkasObnovit&&window.karkasObnovit('net')"); }
 
     static boolean estSet(Context c) {
         try {
@@ -89,6 +91,16 @@ class Karkas {
                 if (!u.toString().equals(old.getJSONObject(i).optString("uri"))) nov.put(old.getJSONObject(i));
             prefs.edit().putString("fayly", nov.toString()).apply();
         } catch (Exception ignored) {}
+    }
+
+    // ---------- tasks prepared without the server ----------
+
+    JSONArray zadaniya() { try { return new JSONArray(prefs.getString("zadaniya", "[]")); } catch (Exception e) { return new JSONArray(); } }
+    void sohranitZadaniya(JSONArray a) { prefs.edit().putString("zadaniya", a.toString()).apply(); }
+    JSONObject vzyatZadanie(int i) {
+        JSONArray a = zadaniya(), b = new JSONArray(); JSONObject o = null;
+        for (int j = 0; j < a.length(); j++) { if (j == i) o = a.optJSONObject(j); else b.put(a.opt(j)); }
+        sohranitZadaniya(b); return o;
     }
 
     // ---------- page snapshots ----------
@@ -184,14 +196,35 @@ class Karkas {
         /** Try the site again; the shell hides itself once the page has loaded. */
         @JavascriptInterface public void povtorit() { a.runOnUiThread(a::povtoritSayt); }
 
-        /** A section: its saved copy when the site is down, otherwise the live page. */
-        @JavascriptInterface public void razdel(String path) {
+        @JavascriptInterface public String sostoyanie() { return sost; }
+
+        /** A section of the live site; prompt (may be empty) is typed into the page's first text field. */
+        @JavascriptInterface public void razdel(String path, String prompt) {
             if (path == null || !path.startsWith("/")) return;
+            a.runOnUiThread(() -> a.otkrytRazdel(path, prompt));
+        }
+
+        @JavascriptInterface public String zadaniya() { return Karkas.this.zadaniya().toString(); }
+        @JavascriptInterface public void dobavitZadanie(String k, String path, String text) {
+            if (path == null || !path.startsWith("/") || text == null || text.trim().isEmpty()) return;
+            try {
+                JSONArray z = Karkas.this.zadaniya();
+                if (z.length() >= 30) return;
+                z.put(new JSONObject().put("k", k).put("path", path).put("text", text.trim()).put("t", System.currentTimeMillis()));
+                sohranitZadaniya(z);
+            } catch (Exception ignored) {}
+        }
+        @JavascriptInterface public void ubratZadanie(int i) { vzyatZadanie(i); }
+        @JavascriptInterface public void otpravitZadanie(int i) {
             a.runOnUiThread(() -> {
-                File f = arhiv(path);
-                if (f != null && !estSet(a)) { otkrytArhiv(f, path); return; }
-                if (f != null && a.saytLezhit()) { otkrytArhiv(f, path); return; }
-                a.otkrytSayt("https://" + HOST + path + (path.contains("?") ? "&" : "?") + "source=app");
+                JSONObject o = vzyatZadanie(i);
+                if (o != null) a.otkrytRazdel(o.optString("path", "/"), o.optString("text", ""));
+            });
+        }
+        @JavascriptInterface public void pochta() {
+            a.runOnUiThread(() -> {
+                try { a.startActivity(new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:info@argeda.ru"))); }
+                catch (Exception e) { Toast.makeText(a, "info@argeda.ru", Toast.LENGTH_LONG).show(); }
             });
         }
 

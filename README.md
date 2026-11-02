@@ -15,8 +15,8 @@
 GitHub Actions собирает APK на каждый push в `main` (файл в Artifacts).
 Новая версия для людей:
 1. В `app/build.gradle` поднять `versionCode` (на 1) и `versionName`.
-2. Поставить тег `vX.Y` с коротким описанием: `git tag -a v1.7 -m "Что нового" && git push --tags`.
-3. Actions соберёт, подпишет и выложит в Releases `ARGEDA-AI.apk` и `versiya.json`.
+2. Закоммитить в `main` с понятным сообщением (оно станет текстом «что нового» в окне обновления).
+3. Actions увидит новую `versionName`, соберёт, подпишет, поставит тег `vX.Y` и выложит в Releases `ARGEDA-AI.apk` и `versiya.json`.
 4. Приложения у людей обновятся сами в течение 6 часов. Для сайта (страница «Скачать») сервер может скопировать оба файла в `public/prilozhenie/`.
 
 ## Ключ подписи

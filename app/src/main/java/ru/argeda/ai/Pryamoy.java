@@ -187,6 +187,21 @@ class Pryamoy {
         }
     }
 
+    /** Music tracks: {id, url, title, dur} for each object that has both audio_url and id. */
+    private static void treki(Object o, JSONArray out, int d) {
+        if (d > 6 || o == null) return;
+        if (o instanceof JSONObject) {
+            JSONObject j = (JSONObject) o; String au = j.optString("audio_url", ""), id = j.optString("id", "");
+            if (au.startsWith("http") && !id.isEmpty()) {
+                try { out.put(new JSONObject().put("id", id).put("url", au).put("title", j.optString("title", "")).put("dur", j.optDouble("duration", 0))); } catch (Exception ignored) {}
+                return;
+            }
+            for (java.util.Iterator<String> it = j.keys(); it.hasNext(); ) treki(j.opt(it.next()), out, d + 1);
+        } else if (o instanceof JSONArray) {
+            JSONArray a = (JSONArray) o; for (int i = 0; i < a.length(); i++) treki(a.opt(i), out, d + 1);
+        }
+    }
+
     private void js(String fn) { view.post(() -> view.evaluateJavascript("window." + fn + "&&window." + fn + "()", null)); }
     private void toast(String t) { view.post(() -> view.evaluateJavascript("window.toast&&toast(" + JSONObject.quote(t) + ")", null)); }
 
@@ -266,6 +281,7 @@ class Pryamoy {
                         if ("success".equals(s)) {
                             JSONArray u = ssylki(d);
                             x.put("st", u.length() > 0 ? "gotovo" : "oshibka").put("urls", u);
+                            JSONArray tk = new JSONArray(); try { treki(new JSONObject(d.optString("resultJson", "{}")), tk, 0); } catch (Exception ignored) {} if (tk.length() > 0) x.put("treki", tk);
                             if (u.length() == 0) x.put("msg", "Готово, но файла в ответе нет");
                             izm = true;
                         } else if ("fail".equals(s)) {

@@ -6,4 +6,8 @@
     <string name="retry">Повторить</string>
     <string name="download_started">Файл скачивается в папку «Загрузки»</string>
     <string name="choose_file">Выберите файл</string>
+    <string name="sc_video">Видео</string>
+    <string name="sc_kartinki">Картинки</string>
+    <string name="sc_muzyka">Музыка</string>
+    <string name="sc_fayly">Мои файлы</string>
 </resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="video" android:enabled="true" android:icon="@drawable/sc_video"
+        android:shortcutShortLabel="@string/sc_video" android:shortcutLongLabel="@string/sc_video">
+        <intent android:action="ru.argeda.ai.RAZDEL" android:targetPackage="ru.argeda.ai" android:targetClass="ru.argeda.ai.MainActivity">
+            <extra android:name="ekran" android:value="razdel" />
+            <extra android:name="k" android:value="video" />
+            <extra android:name="put" android:value="/video" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="kartinki" android:enabled="true" android:icon="@drawable/sc_kartinki"
+        android:shortcutShortLabel="@string/sc_kartinki" android:shortcutLongLabel="@string/sc_kartinki">
+        <intent android:action="ru.argeda.ai.RAZDEL" android:targetPackage="ru.argeda.ai" android:targetClass="ru.argeda.ai.MainActivity">
+            <extra android:name="ekran" android:value="razdel" />
+            <extra android:name="k" android:value="kartinki" />
+            <extra android:name="put" android:value="/kartinki" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="muzyka" android:enabled="true" android:icon="@drawable/sc_muzyka"
+        android:shortcutShortLabel="@string/sc_muzyka" android:shortcutLongLabel="@string/sc_muzyka">
+        <intent android:action="ru.argeda.ai.RAZDEL" android:targetPackage="ru.argeda.ai" android:targetClass="ru.argeda.ai.MainActivity">
+            <extra android:name="ekran" android:value="razdel" />
+            <extra android:name="k" android:value="muzyka" />
+            <extra android:name="put" android:value="/muzyka" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="fayly" android:enabled="true" android:icon="@drawable/sc_fayly"
+        android:shortcutShortLabel="@string/sc_fayly" android:shortcutLongLabel="@string/sc_fayly">
+        <intent android:action="ru.argeda.ai.RAZDEL" android:targetPackage="ru.argeda.ai" android:targetClass="ru.argeda.ai.MainActivity">
+            <extra android:name="ekran" android:value="fayly" />
+            <extra android:name="k" android:value="fayly" />
+            <extra android:name="put" android:value="/biblioteka" />
+        </intent>
+    </shortcut>
+</shortcuts>

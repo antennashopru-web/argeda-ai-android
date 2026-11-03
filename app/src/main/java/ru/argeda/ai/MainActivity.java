@@ -297,6 +297,12 @@ public class MainActivity extends Activity {
             }
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (foto != null) {
+                    Uri u = foto; foto = null;
+                    cb.onReceiveValue(new Uri[]{u});
+                    Toast.makeText(MainActivity.this, "Прикреплено фото из «Поделиться»", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = cb;
                 openFileChooser(params);
@@ -366,10 +372,10 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
         } else {
-            Uri data = getIntent() != null ? getIntent().getData() : null;
             // own screen from the first second, instead of a black window while the site answers
             karkas.pokazat(Karkas.estSet(this) ? "proverka" : "net");
-            web.loadUrl(data != null && HOST.equals(data.getHost()) ? data.toString() : HOME);
+            String start = vhod(getIntent());
+            web.loadUrl(start != null ? start : HOME);
         }
     }
 
@@ -406,12 +412,12 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.2");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.3");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
         w.addJavascriptInterface(new Bridge(w), "ArgedaApp");
-        w.setBackgroundColor(0xFF0F1113);
+        w.setBackgroundColor(0xFF0B0C0E);
     }
 
     private WebView popupWeb;
@@ -470,6 +476,7 @@ public class MainActivity extends Activity {
     /** Text prepared in the app, typed into the section's first text field once the page is up. */
     private String zhdetTekst, zhdetPut;
     void otkrytRazdel(String path, String prompt) {
+        karkas.zakrep = false;
         zhdetTekst = prompt == null || prompt.trim().isEmpty() ? null : prompt.trim();
         zhdetPut = path;
         otkrytSayt("https://" + HOST + path + (path.contains("?") ? "&" : "?") + "source=app");
@@ -751,8 +758,57 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        Uri data = intent.getData();
-        if (data != null && HOST.equals(data.getHost())) web.loadUrl(data.toString());
+        setIntent(intent);
+        String u = vhod(intent);
+        if (u != null) otkrytSayt(u);
+        else if (karkas.zakrep) karkas.pokazat(loadFailed ? "net" : "ok");
+    }
+
+    // ---------- icon shortcuts and «Поделиться → ARGEDA AI» ----------
+    private Uri foto; // a photo shared into the app: handed to the site's next file picker
+
+    /** @return the site address to open, or null to stay where we are */
+    private String vhod(Intent i) {
+        if (i == null) return null;
+        String act = i.getAction();
+        if ("ru.argeda.ai.RAZDEL".equals(act)) {
+            String put = i.getStringExtra("put");
+            karkas.ekran(i.getStringExtra("ekran"), i.getStringExtra("k"), null);
+            return put != null && put.startsWith("/") ? "https://" + HOST + put + "?source=app" : null;
+        }
+        if (Intent.ACTION_SEND.equals(act)) {
+            String type = i.getType() == null ? "" : i.getType();
+            if (type.startsWith("image/")) {
+                Uri src = i.getParcelableExtra(Intent.EXTRA_STREAM);
+                if (src == null) return null;
+                try {
+                    File dir = new File(getCacheDir(), "camera"); dir.mkdirs();
+                    File f = new File(dir, "podelilis-" + System.currentTimeMillis() + ".jpg");
+                    try (java.io.InputStream in = getContentResolver().openInputStream(src); java.io.FileOutputStream out = new java.io.FileOutputStream(f)) {
+                        byte[] b = new byte[16384]; int n; long total = 0;
+                        while ((n = in.read(b)) > 0) { out.write(b, 0, n); total += n; if (total > 40_000_000L) throw new java.io.IOException("big"); }
+                    }
+                    foto = CameraFileProvider.uriFor(f);
+                    Toast.makeText(this, "Фото прикрепится, когда раздел попросит файл", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, "Не удалось взять фото", Toast.LENGTH_SHORT).show();
+                    return null;
+                }
+                karkas.ekran("razdel", "kartinki", null);
+                return "https://" + HOST + "/kartinki?source=app";
+            }
+            String text = i.getStringExtra(Intent.EXTRA_TEXT);
+            if (text == null || text.trim().isEmpty()) return null;
+            text = text.trim();
+            Uri asUrl = Uri.parse(text);
+            if (HOST.equals(asUrl.getHost()) && text.indexOf(' ') < 0) return text;
+            karkas.zakrep = true;
+            karkas.ekran("sozdat", null, text);
+            return null;
+        }
+        Uri data = i.getData();
+        if (data != null && HOST.equals(data.getHost())) return data.toString();
+        return null;
     }
 
     @Override
@@ -760,7 +816,10 @@ public class MainActivity extends Activity {
         if (popupWeb != null) { if (popupWeb.canGoBack()) popupWeb.goBack(); else closePopup(); return; }
         if (karkas.vidim()) {
             // inside the own screens: step back to «Главная» first, then leave the app
-            karkas.view.evaluateJavascript("window.karkasNazad?window.karkasNazad():'net'", r -> { if (r == null || !r.contains("ok")) finish(); });
+            karkas.view.evaluateJavascript("window.karkasNazad?window.karkasNazad():'net'", r -> {
+                if (r != null && r.contains("ok")) return;
+                if (karkas.zakrep && stranitsaGotova && !loadFailed) karkas.skrytVsegda(); else finish();
+            });
             return;
         }
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();

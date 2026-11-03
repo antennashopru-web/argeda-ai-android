@@ -168,7 +168,9 @@ function online(){ return st!=='net' }
 function zadaniya(){ return K ? parse(K.zadaniya()) : [] }
 
 // ---------- screens ----------
+var podel=null;   // text shared into the app («Поделиться → ARGEDA AI»)
 function noteHtml(){
+  if(st==='ok') return '<div class="note" style="border-color:rgba(95,211,141,.35);background:rgba(95,211,141,.07)">'+svg('wifi').replace('<svg','<svg style="stroke:#5fd38d"')+'<div><b>Сайт работает</b><span>Выберите раздел — или вернитесь на сайт.</span><br><button data-act="nasayt">Открыть сайт</button></div></div>';
   if(st!=='net') return '';
   var set = K ? K.set() : navigator.onLine, n = zadaniya().length;
   return '<div class="note">'+svg('wifi')+'<div><b>'+(set?'Сервер сейчас не отвечает':'Нет интернета')+'</b><span>'
@@ -188,7 +190,8 @@ var S = {
       +'<div class="foot">ARGEDA AI · приложение открывается и без интернета</div>';
   },
   sozdat:function(){
-    return '<div style="height:18px"></div><h2 class="h">Что создаём?</h2><p class="sub">Выберите раздел и опишите задачу'+(st==='net'?' — отправим, когда сервер заработает':'')+'</p>'
+    return '<div style="height:18px"></div><h2 class="h">Что создаём?</h2><p class="sub">'+(podel?'Выберите раздел — текст подставится сам':'Выберите раздел и опишите задачу'+(st==='net'?' — отправим, когда сервер заработает':''))+'</p>'
+      +(podel?'<div class="note">'+svg('share')+'<div><b>Текст из «Поделиться»</b><span>'+esc(podel.length>220?podel.slice(0,220)+'…':podel)+'</span><br><button data-act="otmena">Отменить</button></div></div>':'')
       +noteHtml()+'<div class="mini">'+R.map(function(r){return '<button class="card" style="'+vars(r)+'" data-r="'+r.k+'"><div class="ic">'+svg(r.k)+'</div><div class="t h">'+r.t+'</div></button>'}).join('')+'</div>';
   },
   razdel:function(k){
@@ -246,10 +249,10 @@ function show(name,k){
 function redraw(){ var y=window.scrollY, p=document.getElementById('prompt'), t=p&&p.value; show(cur,curK); if(p){var q=document.getElementById('prompt'); if(q) q.value=t;} window.scrollTo(0,y); }
 
 function sostoyanie(s){
-  st = s==='proverka' ? 'proverka' : 'net';
+  st = s==='proverka'||s==='ok' ? s : 'net';
   var c=document.getElementById('chip');
-  c.className='chip'+(st==='proverka'?' proverka':'');
-  document.getElementById('chip-t').textContent = st==='proverka' ? 'Подключаюсь…' : ((K?K.set():navigator.onLine) ? 'Сервер недоступен' : 'Нет интернета');
+  c.className='chip'+(st==='proverka'?' proverka':st==='ok'?' ok':'');
+  document.getElementById('chip-t').textContent = st==='proverka' ? 'Подключаюсь…' : st==='ok' ? 'Сайт работает' : ((K?K.set():navigator.onLine) ? 'Сервер недоступен' : 'Нет интернета');
 }
 
 document.addEventListener('input',function(e){ if(e.target.id==='prompt'&&curK) try{sessionStorage.setItem('ch-'+curK,e.target.value)}catch(x){} });
@@ -257,7 +260,7 @@ document.addEventListener('click',function(e){
   var t=e.target.closest('[data-go],[data-r],[data-site],[data-act],[data-z],[data-zd],[data-f],[data-fs],[data-kop]'); if(!t) return;
   var d=t.dataset;
   if(d.go){ show(d.go); return; }
-  if(d.r){ show('razdel',d.r); return; }
+  if(d.r){ if(podel){ try{sessionStorage.setItem('ch-'+d.r,podel)}catch(x){} podel=null; } show('razdel',d.r); return; }
   if(d.site){ if(!K) return; if(st==='net'){ K.kopiya(d.site); retry(); return; } K.razdel(d.site,''); return; }
   if(d.kop){ K&&K.kopiya(d.kop); return; }
   if(d.f!=null&&!e.target.closest('[data-fs]')){ var x=window._f[+d.f]; if(x&&K) K.otkrytFayl(x.uri,x.mime); return; }
@@ -266,6 +269,8 @@ document.addEventListener('click',function(e){
   if(d.z!=null){ if(st==='net'){ toast('Отправится, когда сервер заработает'); retry(); return; } K&&K.otpravitZadanie(+d.z); return; }
   var a=d.act;
   if(a==='retry'){ retry(); return; }
+  if(a==='nasayt'){ K&&K.otpustit(); return; }
+  if(a==='otmena'){ podel=null; if(st==='ok'&&K){ K.otpustit(); } show('glavnaya'); return; }
   if(a==='galereya'){ K&&K.galereya(); return; }
   if(a==='pochta'){ K&&K.pochta(); return; }
   if(a==='sozdat'){
@@ -285,8 +290,10 @@ function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povt
 
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
 window.karkasNazad=function(){ if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
+window.karkasEkran=function(o){ if(!o) return; if(o.t) podel=o.t; if(S[o.n]||o.n==='razdel') show(o.n, o.k||null); };
 sostoyanie(K ? K.sostoyanie() : 'proverka');
-show('glavnaya');
+var e0 = K && K.startEkran ? K.startEkran() : '';
+if(e0){ try{ window.karkasEkran(JSON.parse(e0)); }catch(x){ show('glavnaya'); } } else show('glavnaya');
 setInterval(function(){ if(!document.hidden && K && K.set() && st==='net'){ sostoyanie('proverka'); K.povtorit(); } }, 30000);
 document.addEventListener('visibilitychange',function(){ if(!document.hidden) redraw(); });
 })();

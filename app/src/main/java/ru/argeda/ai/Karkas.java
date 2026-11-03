@@ -47,7 +47,7 @@ class Karkas {
         s.setAllowFileAccess(false);          // assets are still readable; nothing else on disk
         s.setAllowContentAccess(true);        // thumbnails of saved files (content://)
         s.setDomStorageEnabled(true);
-        v.setBackgroundColor(0xFF0F1113);
+        v.setBackgroundColor(0xFF0B0C0E);
         v.addJavascriptInterface(new Most(), "ArgedaKarkas");
         v.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView w, WebResourceRequest r) { return true; }
@@ -64,7 +64,19 @@ class Karkas {
         view.setVisibility(View.VISIBLE);
     }
 
-    void skryt() { view.setVisibility(View.GONE); }
+    void skryt() { if (zakrep) { sost = "ok"; js("window.karkasObnovit&&window.karkasObnovit('ok')"); return; } view.setVisibility(View.GONE); }
+    void skrytVsegda() { zakrep = false; view.setVisibility(View.GONE); }
+
+    /** Held open on purpose (text shared into the app): the user picks a section first, even if the site is up. */
+    boolean zakrep;
+    private String startEkran;
+    /** Open one of the shell's own screens: glavnaya, sozdat, razdel (k), fayly, kabinet; text — prefill. */
+    void ekran(String name, String k, String text) {
+        try {
+            startEkran = new JSONObject().put("n", name).put("k", k == null ? "" : k).put("t", text == null ? "" : text).toString();
+        } catch (Exception e) { return; }
+        if (zagruzhen) js("window.karkasEkran&&window.karkasEkran(" + startEkran + ")");
+    }
 
     /** The site failed again while the shell is open: tell the page so the button comes back. */
     void neUdalos() { sost = "net"; if (vidim()) js("window.karkasObnovit&&window.karkasObnovit('net')"); }
@@ -164,7 +176,7 @@ class Karkas {
         s.setAllowFileAccess(true);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
-        p.setBackgroundColor(0xFF0F1113);
+        p.setBackgroundColor(0xFF0B0C0E);
         p.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView w, WebResourceRequest r) {
                 Uri u = r.getUrl();
@@ -197,6 +209,8 @@ class Karkas {
         @JavascriptInterface public void povtorit() { a.runOnUiThread(a::povtoritSayt); }
 
         @JavascriptInterface public String sostoyanie() { return sost; }
+        @JavascriptInterface public String startEkran() { String e = startEkran; startEkran = null; return e == null ? "" : e; }
+        @JavascriptInterface public void otpustit() { a.runOnUiThread(() -> { zakrep = false; if ("ok".equals(sost)) skryt(); }); }
 
         /** A section of the live site; prompt (may be empty) is typed into the page's first text field. */
         @JavascriptInterface public void razdel(String path, String prompt) {

@@ -492,6 +492,7 @@ function formaHtml(){
   } else {
     var l=modeliKat(pzKat), m=tekMod();
     h+='<div class="pz"><select data-act2="model">'+l.map(function(x){return '<option value="'+esc(x.m)+'"'+(x===m?' selected':'')+'>'+esc(x.n)+'</option>'}).join('')+'</select></div>';
+    if(m && /text-to-speech/.test(m.m)) h+='<p class="sm" style="color:var(--tekst3);margin:6px 0">Озвучка сейчас может долго стоять в очереди. Если за 30 минут не придёт — попробуйте позже.</p>';
     if(m){
       var gl=m.f.filter(glavnoe), dop=m.f.filter(function(f){return !glavnoe(f)});
       h+='<div class="forma">'+gl.map(function(f){return pole(m,f)}).join('')
@@ -531,7 +532,26 @@ document.addEventListener('change',function(e){ var t=e.target; if(!t.dataset) r
   if(t.dataset.act2==='chatm'){ pzChatM=t.value; }
   if(t.id==='pz-fayl'){ var fs=[].slice.call(t.files||[]); t.value=''; fs.forEach(zagruzitFayl); }
 });
+var virX=null, virZ=null;
+function virNachat(x){ virX=x; pzZagrKuda.k='__vir'; var fi=document.getElementById('pz-fayl'); fi.multiple=false; fi.accept='image/*'; fi.click(); toast('Выберите своё фото — лицо крупно, анфас'); }
+function virFoto(file){
+  var x=virX; if(!x) return; if(file.size>30*1024*1024){ toast('Файл больше 30 МБ'); return; }
+  virZ={x:x,img:null,vid:null};
+  var i1='z'+(++pzZagrId), i2='z'+(++pzZagrId); pzZagrKuda[i1]={vir:'img'}; pzZagrKuda[i2]={vir:'vid'};
+  toast('Загружаю фото и шаблон…');
+  var r=new FileReader(); r.onload=function(){ var s=String(r.result); P.zagruzit(i1, s.slice(s.indexOf(',')+1), file.name, file.type||'image/jpeg'); }; r.readAsDataURL(file);
+  P.zagruzitAsset(i2,'karkas/primery/'+x.v+'.mp4','video/mp4');
+}
+function virGotovo(){
+  var z=virZ; if(!z||!z.img||!z.vid) return; virZ=null;
+  sprosit('Сделать ролик «'+z.x.t+'» с вашим лицом? Списываются кредиты по вашему ключу.', function(){
+    P.zapuskModel('wan/2-2-animate-replace', JSON.stringify({video_url:z.vid, image_url:z.img, resolution:'480p'}), 'Вирусный ролик: '+z.x.t, 'video', z.x.t);
+    pzKat='video'; show('pryamoy'); toast('Запущено. Ролик появится здесь через несколько минут');
+  });
+}
 function zagruzitFayl(file){
+  var fi=document.getElementById('pz-fayl'); fi.accept='';
+  if(pzZagrKuda.k==='__vir'){ pzZagrKuda.k=null; virFoto(file); return; }
   var kuda=pzZagrKuda.k, m=tekMod(); if(!kuda||!m) return;
   if(file.size>30*1024*1024){ toast('Файл больше 30 МБ'); return; }
   var id='z'+(++pzZagrId); pzZagrKuda[id]={m:m.m,k:kuda};
@@ -540,7 +560,8 @@ function zagruzitFayl(file){
 }
 window.pzZagr=function(id,url,err){
   var z=pzZagrKuda[id]; delete pzZagrKuda[id]; if(!z) return;
-  if(!url){ toast('Не загрузилось: '+(err||'')); return; }
+  if(!url){ if(z.vir) virZ=null; toast('Не загрузилось: '+(err||'')); return; }
+  if(z.vir){ if(!virZ) return; virZ[z.vir]=url; virGotovo(); return; }
   var m=MOD.filter(function(x){return x.m===z.m})[0]; if(!m) return;
   var f=m.f.filter(function(x){return x.k===z.k})[0];
   if(f&&f.t==='array'){ var a=(polVal(m,z.k)||[]).slice(); a.push(url); setVal(m,z.k,a); } else setVal(m,z.k,url);
@@ -630,6 +651,7 @@ document.addEventListener('click',function(e){
   if(d.act && d.act.indexOf('pz-')===0 && pzKlik(d)) return;
   var a=d.act;
   if(a==='zakryt'){ return; }
+  if(a==='takoy' && PALL[prosI] && PALL[prosI].vir && pzEst()){ var xv=PALL[prosI]; zakrytProsmotr(); virNachat(xv); return; }
   if(a==='takoy'){ var x=PALL[prosI]; zakrytProsmotr(); if(x){ try{sessionStorage.setItem('ch-'+x.k,x.ph)}catch(z){} show('razdel',x.k); } return; }
   if(a==='tema'){ try{localStorage.setItem('tema',d.v)}catch(x){} primenitTemu(); redraw(); return; }
   if(a==='obnov'){ if(K&&K.obnovlenie) K.obnovlenie(); return; }

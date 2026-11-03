@@ -420,7 +420,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.0");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.1");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);

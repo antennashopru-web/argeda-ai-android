@@ -193,7 +193,7 @@ class Pryamoy {
         if (o instanceof JSONObject) {
             JSONObject j = (JSONObject) o; String au = j.optString("audio_url", ""), id = j.optString("id", "");
             if (au.startsWith("http") && !id.isEmpty()) {
-                try { out.put(new JSONObject().put("id", id).put("url", au).put("title", j.optString("title", "")).put("dur", j.optDouble("duration", 0))); } catch (Exception ignored) {}
+                try { out.put(new JSONObject().put("id", id).put("url", au).put("title", j.optString("title", "")).put("dur", j.optDouble("duration", 0)).put("img", j.optString("image_url", "")).put("tekst", j.optString("prompt", "")).put("stil", j.optString("tags", ""))); } catch (Exception ignored) {}
                 return;
             }
             for (java.util.Iterator<String> it = j.keys(); it.hasNext(); ) treki(j.opt(it.next()), out, d + 1);

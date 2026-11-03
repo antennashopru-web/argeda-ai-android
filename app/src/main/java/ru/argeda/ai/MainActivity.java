@@ -231,6 +231,13 @@ public class MainActivity extends Activity {
         progress = findViewById(R.id.progress);
         karkas = new Karkas(this, findViewById(R.id.offline));
         new Pryamoy(this, findViewById(R.id.offline));
+        ((WebView) findViewById(R.id.offline)).setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (fileCallback != null) fileCallback.onReceiveValue(null);
+                fileCallback = cb; openFileChooser(params); return true;
+            }
+        });
 
         setupWebView(web);
         WebSettings s = web.getSettings();
@@ -413,7 +420,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.8");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.9");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);

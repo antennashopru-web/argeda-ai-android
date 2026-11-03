@@ -241,6 +241,85 @@ class Pryamoy {
             });
         }
 
+        /** Any catalog model: body {model, input} built on the page from the model's schema. */
+        @JavascriptInterface public void zapuskModel(String model, String inputJson, String nazv, String tip, String prompt) {
+            bg.execute(() -> {
+                JSONObject x = new JSONObject();
+                try {
+                    x.put("tip", tip).put("nazv", nazv).put("prompt", prompt == null ? "" : prompt).put("t", System.currentTimeMillis());
+                    JSONObject telo = new JSONObject().put("model", model).put("input", new JSONObject(inputJson));
+                    JSONObject j = zapros("POST", "createTask", telo);
+                    String id = j.optJSONObject("data") != null ? j.optJSONObject("data").optString("taskId", "") : "";
+                    if (id.isEmpty()) throw new Exception("Сервис не вернул номер задачи");
+                    x.put("id", id).put("st", "idet");
+                } catch (Exception e) {
+                    try { x.put("id", "err-" + System.currentTimeMillis()).put("st", "oshibka").put("msg", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+                }
+                synchronized (Pryamoy.this) { JSONArray z = Pryamoy.this.zadachi(); z.put(x); sohranitZadachi(z); }
+                js("pryamoyObnovit");
+            });
+        }
+
+        /** Uploads a file picked on the page (base64) and returns its temporary URL to window.pzZagr(id, url, err). */
+        @JavascriptInterface public void zagruzit(String id, String b64, String name, String mime) {
+            bg.execute(() -> {
+                String url = null, err = null;
+                try {
+                    String k = klyuch(); if (k == null) throw new Exception("Ключ не сохранён");
+                    byte[] data = Base64.decode(b64, Base64.DEFAULT);
+                    String gr = "----argeda" + System.currentTimeMillis();
+                    HttpURLConnection c = (HttpURLConnection) new URL("https://kieai.redpandaai.co/api/file-stream-upload").openConnection();
+                    c.setConnectTimeout(20000); c.setReadTimeout(120000); c.setDoOutput(true); c.setRequestMethod("POST");
+                    c.setRequestProperty("Authorization", "Bearer " + k);
+                    c.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + gr);
+                    String fn = (name == null || name.isEmpty() ? "file" : name).replaceAll("[^A-Za-z0-9._-]", "_");
+                    try (OutputStream o = c.getOutputStream()) {
+                        o.write(("--" + gr + "\r\nContent-Disposition: form-data; name=\"uploadPath\"\r\n\r\nargeda-app\r\n").getBytes(StandardCharsets.UTF_8));
+                        o.write(("--" + gr + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" + fn + "\"\r\nContent-Type: " + (mime == null || mime.isEmpty() ? "application/octet-stream" : mime) + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+                        o.write(data);
+                        o.write(("\r\n--" + gr + "--\r\n").getBytes(StandardCharsets.UTF_8));
+                    }
+                    int kod = c.getResponseCode();
+                    InputStream in = kod >= 400 ? c.getErrorStream() : c.getInputStream();
+                    ByteArrayOutputStream b = new ByteArrayOutputStream();
+                    if (in != null) { byte[] buf = new byte[8192]; int n; while ((n = in.read(buf)) > 0) b.write(buf, 0, n); in.close(); }
+                    JSONObject j = new JSONObject(b.toString("UTF-8"));
+                    if (j.optInt("code", kod) != 200) throw new Exception(oshibka(j.optInt("code", kod), j.optString("msg", "")));
+                    url = j.getJSONObject("data").getString("downloadUrl");
+                } catch (Exception e) { err = String.valueOf(e.getMessage()); }
+                final String u = url, er = err;
+                view.post(() -> view.evaluateJavascript("window.pzZagr&&pzZagr(" + JSONObject.quote(id) + "," + (u == null ? "null" : JSONObject.quote(u)) + "," + (er == null ? "null" : JSONObject.quote(er)) + ")", null));
+            });
+        }
+
+        /** Text chat; answer goes to window.pzChat(text, err). */
+        @JavascriptInterface public void chat(String model, String messagesJson) {
+            bg.execute(() -> {
+                String txt = null, err = null;
+                try {
+                    String k = klyuch(); if (k == null) throw new Exception("Ключ не сохранён");
+                    JSONObject telo = new JSONObject().put("model", model).put("messages", new JSONArray(messagesJson)).put("stream", false).put("max_tokens", 4096);
+                    HttpURLConnection c = (HttpURLConnection) new URL("https://api.kie.ai/claude/v1/messages").openConnection();
+                    c.setConnectTimeout(20000); c.setReadTimeout(180000); c.setDoOutput(true); c.setRequestMethod("POST");
+                    c.setRequestProperty("Authorization", "Bearer " + k);
+                    c.setRequestProperty("Content-Type", "application/json");
+                    try (OutputStream o = c.getOutputStream()) { o.write(telo.toString().getBytes(StandardCharsets.UTF_8)); }
+                    int kod = c.getResponseCode();
+                    InputStream in = kod >= 400 ? c.getErrorStream() : c.getInputStream();
+                    ByteArrayOutputStream b = new ByteArrayOutputStream();
+                    if (in != null) { byte[] buf = new byte[8192]; int n; while ((n = in.read(buf)) > 0) b.write(buf, 0, n); in.close(); }
+                    JSONObject j = new JSONObject(b.toString("UTF-8"));
+                    JSONArray ct = j.optJSONArray("content");
+                    if (ct == null) throw new Exception(oshibka(j.optInt("code", kod), j.optString("msg", j.optJSONObject("error") != null ? j.optJSONObject("error").optString("message") : "")));
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < ct.length(); i++) { JSONObject bl = ct.optJSONObject(i); if (bl != null && "text".equals(bl.optString("type"))) sb.append(bl.optString("text")); }
+                    txt = sb.toString();
+                } catch (Exception e) { err = String.valueOf(e.getMessage()); }
+                final String t = txt, er = err;
+                view.post(() -> view.evaluateJavascript("window.pzChat&&pzChat(" + (t == null ? "null" : JSONObject.quote(t)) + "," + (er == null ? "null" : JSONObject.quote(er)) + ")", null));
+            });
+        }
+
         @JavascriptInterface public void skachat(String url, String mime) {
             if (url == null || !url.startsWith("https://")) return;
             a.runOnUiThread(() -> a.download(view, url, view.getSettings().getUserAgentString(), null, mime));

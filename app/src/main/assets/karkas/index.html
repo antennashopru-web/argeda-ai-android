@@ -148,6 +148,32 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 .pzz .ry button{font-size:13px;font-weight:700;padding:8px 12px;border-radius:12px;background:var(--knopka);color:var(--tekst)}
 .pzz .st{font-weight:700;font-size:12.5px}
 .pzz .st.idet{color:var(--a1)}.pzz .st.gotovo{color:var(--uspeh)}.pzz .st.oshibka{color:var(--oshibka,#f0524f)}
+.forma{margin-bottom:12px}
+.pf{margin-bottom:12px}
+.pl{display:block;font-size:12.5px;font-weight:700;color:var(--tekst2);margin:0 0 6px;text-transform:capitalize}
+.pd{display:block;color:#6b7186;font-size:11.5px;margin-top:4px;line-height:1.35}
+.pf input[type=text],.pf input[type=number],.pf select,.pz select{width:100%;background:var(--pov1);color:var(--tekst);border:1px solid var(--liniya);border-radius:14px;padding:12px 14px;font:400 15px Onest,sans-serif;outline:none;-webkit-appearance:none;appearance:none}
+.pz{margin-bottom:14px}
+.pf textarea{min-height:70px}
+.tg{display:flex;align-items:center;gap:8px;font-size:15px}
+.tg input{width:20px;height:20px;accent-color:var(--a1)}
+.fl{display:flex;flex-wrap:wrap;gap:8px}
+.fi{font-size:12.5px;background:var(--knopka);border:1px solid var(--liniya);border-radius:10px;padding:6px 8px}
+.fi button{color:var(--tekst2);font-weight:700;margin-left:4px}
+.fb{font-size:13.5px;font-weight:700;padding:9px 14px;border-radius:12px;border:1px dashed rgba(255,180,92,.6);color:var(--a1)}
+details{background:var(--pov1);border:1px solid var(--liniya);border-radius:16px;padding:12px 14px;margin-bottom:12px}
+details summary{font-weight:700;font-size:14px;cursor:pointer}
+details[open] summary{margin-bottom:12px}
+.chat{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.msg{padding:10px 13px;border-radius:16px;font-size:14.5px;max-width:88%;white-space:normal;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:rgba(255,180,92,.16);color:#ffe2bd}
+.msg.assistant{align-self:flex-start;background:var(--pov1);border:1px solid var(--liniya)}
+#dlg{position:fixed;inset:0;z-index:30;background:rgba(5,6,10,.7);display:none;align-items:center;justify-content:center;padding:16px}
+#dlg.on{display:flex}
+#dlg .dl{background:#151925;border:1px solid var(--liniya);border-radius:20px;padding:18px;max-width:380px;width:100%}
+#dlg p{margin:0 0 16px;font-size:15.5px}
+#dlg .ry{display:flex;gap:10px}
+#dlg .btn{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -161,7 +187,10 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 </nav>
 <div class="toast" id="toast"></div>
 <div id="pros"></div>
+<div id="dlg"></div>
+<input type="file" id="pz-fayl" style="display:none">
 
+<script src="modeli.js"></script>
 <script>
 (function(){
 var K = window.ArgedaKarkas || null;
@@ -313,7 +342,7 @@ var S = {
       +'<h1>Снимайте кино, пишите песни и оживляйте актёров</h1><p>Видео, музыка, голос и картинки от лучших моделей мира. Один баланс, все результаты в «Моих файлах».</p>'
       +'<button class="btn a" data-go="sozdat">Начать создавать</button><br><button class="btn b" data-go="fayly">Смотреть работы</button></div></section>'
       +noteHtml()
-      +(pzEst()?'<div class="note ok">'+svg('wifi')+'<div><b>Прямой режим включён</b><span>Картинки, видео и песни — прямо с телефона.</span><br><button data-go="pryamoy">Открыть</button></div></div>':'')
+      +(pzEst()?'<div class="note ok">'+svg('wifi')+'<div><b>Студия включена</b><span>Все модели — видео, картинки, музыка, голос, чат — прямо с телефона.</span><br><button data-go="pryamoy">Открыть</button></div></div>':'')
       +'<div class="blok"><h2>Что создадим сегодня</h2><button data-go="sozdat">Все разделы →</button></div>'
       +'<div class="tiles">'+R.slice(0,6).map(tile).join('')+'</div>'
       +'<div class="blok"><h2>Вирусные ролики</h2><button data-site="/virusnye">Все шаблоны →</button></div>'+lentaV(PV)
@@ -348,7 +377,7 @@ var S = {
         return '<div class="work" data-z="'+i+'"><div class="pr">'+art(r.k)+'<em class="zhdet">Ждёт связи</em></div><div class="op"><b>'+esc(x.text)+'</b><small>'+r.t+' · '+kogda(x.t)+'</small><button class="del" data-zd="'+i+'">Убрать</button></div></div>'}).join('')+'</div>';
     }
     var pg=pzList().filter(function(x){return x.st!=='oshibka'});
-    if(pg.length){ h+='<h3>Создано с телефона</h3><button class="row" data-go="pryamoy" style="background:var(--pov1);border:1px solid var(--liniya);border-radius:18px;margin-bottom:6px"><span class="ik">'+svg('koshelek')+'</span><span class="x"><b>Прямой режим</b><small>Готово: '+pg.filter(function(x){return x.st==='gotovo'}).length+(pg.some(function(x){return x.st==='idet'})?' · ещё создаётся':'')+'</small></span>'+svg('dalee')+'</button>'; }
+    if(pg.length){ h+='<h3>Создано с телефона</h3><button class="row" data-go="pryamoy" style="background:var(--pov1);border:1px solid var(--liniya);border-radius:18px;margin-bottom:6px"><span class="ik">'+svg('koshelek')+'</span><span class="x"><b>Студия</b><small>Готово: '+pg.filter(function(x){return x.st==='gotovo'}).length+(pg.some(function(x){return x.st==='idet'})?' · ещё создаётся':'')+'</small></span>'+svg('dalee')+'</button>'; }
     h+='<h3>Сохранено с сайта</h3>';
     h+= f.length ? '<div class="works">'+f.map(workFile).join('')+'</div>' : '<div class="empty">Здесь появятся картинки, видео и музыка, которые вы сохраните с сайта.</div>';
     h+='<button class="btn b w" data-act="galereya">Открыть галерею телефона</button>';
@@ -362,7 +391,7 @@ var S = {
     var v = K ? K.versiya() : '';
     function row(ic,t,s,attr){return '<button class="row" '+attr+'><span class="ik">'+svg(ic)+'</span><span class="x"><b>'+t+'</b><small>'+s+'</small></span>'+svg('dalee')+'</button>'}
     return '<div class="title">Кабинет</div><p class="sub" style="margin:0 0 16px">Баланс, история и настройки хранятся на сервере</p>'+noteHtml()
-      +(P?'<div class="list">'+row('koshelek','Прямой режим',pzEst()?'Включён: создание с телефона по ключу':'Создание с телефона по своему ключу','data-go="pryamoy"')+'</div>':'')
+      +(P?'<div class="list">'+row('koshelek','Студия — все модели',pzEst()?'Включена: создание с телефона по ключу':'Все модели сайта с телефона по своему ключу','data-go="pryamoy"')+'</div>':'')
       +'<div class="list">'+row('user','Мой кабинет','Баланс, история, профиль','data-site="/kabinet"')
       +row('koshelek','Пополнить токены','Пакеты токенов и оплата','data-site="/tseny"')
       +row('kniga','Модели и цены','Что умеет каждая модель','data-site="/modeli"')
@@ -379,7 +408,7 @@ function pzEst(){ try{ return !!(P && P.est()); }catch(e){ return false; } }
 function pzList(){ try{ return P ? parse(P.zadachi()) : []; }catch(e){ return []; } }
 function pzKarta(x){
   var st = x.st==='gotovo'?'Готово':x.st==='oshibka'?'Ошибка':'Создаётся…';
-  var h='<div class="pzz"><span class="st '+x.st+'">'+st+'</span> <small>· '+(PZT[x.tip]?PZT[x.tip].t:'')+' · '+kogda(x.t)+'</small><p>'+esc(x.prompt)+'</p>';
+  var h='<div class="pzz"><span class="st '+x.st+'">'+st+'</span> <small>· '+esc(x.nazv||(PZT[x.tip]?PZT[x.tip].t:''))+' · '+kogda(x.t)+'</small><p>'+esc(x.prompt)+'</p>';
   if(x.st==='oshibka') h+='<small>'+esc(x.msg||'')+'</small>';
   (x.urls||[]).forEach(function(u){
     var m = /\.(mp4|mov)(\?|$)/i.test(u)?'video/mp4':/\.(mp3|wav|m4a)(\?|$)/i.test(u)?'audio/mpeg':'image/jpeg';
@@ -390,30 +419,124 @@ function pzKarta(x){
   h+='<div class="ry">'+(x.st!=='idet'?'<button data-act="pz-ubrat" data-id="'+esc(x.id)+'">Убрать</button>':'')+(x.st==='oshibka'?'<button data-act="pz-snova" data-id="'+esc(x.id)+'">Повторить</button>':'')+'</div></div>';
   return h;
 }
+/* ---------- Студия: все модели по своему ключу ---------- */
+var MOD = window.MODELI || [];
+var KAT = [['video','Видео'],['kartinki','Картинки'],['muzyka','Музыка'],['golos','Голос'],['obrabotka','Обработка'],['chat','Чат']];
+var TOP = ['kling-4.0','wan/3-0-video','bytedance/seedance-2-fast','bytedance/seedance-2-5','veo','grok-imagine/1-5','omnihuman-2','nano-banana-2-1','seedream/5-pro','gpt-image-2-5','flux-3','nano-banana-pro','ai-music-api','elevenlabs/text-to-speech-multilingual-v2','google/gemini-3-8-flash-tts','topaz','recraft/remove-background'];
+function topI(m){ for(var i=0;i<TOP.length;i++) if(m.indexOf(TOP[i])===0) return i; return 99; }
+var CHATM=[['claude-sonnet-5-5','Claude Sonnet 5.5'],['claude-opus-5-5','Claude Opus 5.5'],['claude-haiku-5-5','Claude Haiku 5.5']];
+var pzKat='video', pzMod={}, pzVal={}, pzPoisk='', pzZagrId=0, pzZagrKuda={}, pzChatM='claude-sonnet-5-5', pzChatH=[], pzChatZhdu=false;
+try{ pzChatH = JSON.parse(localStorage.getItem('pz-chat')||'[]'); }catch(e){}
+function modeliKat(k){ return MOD.filter(function(x){return x.c===k}).sort(function(a,b){ return topI(a.m)-topI(b.m) || a.n.localeCompare(b.n); }); }
+function tekMod(){ var l=modeliKat(pzKat); var id=pzMod[pzKat]; for(var i=0;i<l.length;i++) if(l[i].m===id) return l[i]; return l[0]; }
+function polVal(m,k){ var o=pzVal[m.m]||(pzVal[m.m]={}); return o[k]; }
+function setVal(m,k,v){ (pzVal[m.m]||(pzVal[m.m]={}))[k]=v; }
+function jeUrl(f){ return /url|image|video|audio|file|mask/i.test(f.k) && !/format|count|num|resolution|aspect|ratio|enable|type/i.test(f.k); }
+function dlinniy(f){ return /^(prompt|text|lyrics|style|negative_prompt|description|descriptions|full_lyrics|tags|negative_tags|content)$/i.test(f.k); }
+function glavnoe(f){ return f.r || /prompt|text|lyrics|aspect|resolution|duration|image|video|audio|voice|style|title|instrumental|custom_mode/i.test(f.k); }
+var RUS={prompt:'Описание',negative_prompt:'Чего не должно быть',duration:'Длительность, с',resolution:'Качество',aspect_ratio:'Формат кадра',image_url:'Фото',image_urls:'Фото',input_urls:'Фото',image_input:'Фото',reference_image_urls:'Фото-образцы',first_frame_url:'Первый кадр',last_frame_url:'Последний кадр',video_url:'Видео',video_urls:'Видео',reference_video_urls:'Видео-образцы',audio_url:'Аудио',audio_urls:'Аудио',reference_audio_urls:'Аудио-образцы',text:'Текст',voice:'Голос',lyrics:'Слова песни',style:'Стиль',title:'Название',instrumental:'Без вокала',custom_mode:'Свой режим (слова и стиль)',model:'Версия',vocal_gender:'Голос (m — мужской, f — женский)',seed:'Зерно',output_format:'Формат файла',num_images:'Сколько картинок',audio:'Со звуком',generate_audio:'Со звуком',sound:'Со звуком',speed:'Скорость',stability:'Стабильность',language_code:'Язык',upscale_factor:'Увеличение',mode:'Режим',quality:'Качество'};
+function pole(m,f){
+  var v=polVal(m,f.k), id='f-'+f.k, nm='<label class="pl" for="'+id+'">'+esc(RUS[f.k]||f.k.replace(/_/g,' '))+(f.r?' *':'')+'</label>', h='';
+  var dsc=f.d?'<small class="pd">'+esc(f.d)+'</small>':'';
+  if(f.e){ if(v==null) v=(f.v!=null?f.v:f.e[0]);
+    h='<select id="'+id+'" data-fk="'+f.k+'">'+f.e.map(function(o){return '<option'+(String(o)===String(v)?' selected':'')+'>'+esc(o)+'</option>'}).join('')+'</select>'; }
+  else if(f.t==='boolean'){ if(v==null) v=!!f.v; h='<label class="tg"><input type="checkbox" data-fk="'+f.k+'"'+(v?' checked':'')+'> да</label>'; }
+  else if(f.t==='integer'||f.t==='number'){ h='<input type="number" id="'+id+'" data-fk="'+f.k+'" value="'+esc(v!=null?v:(f.v!=null?f.v:''))+'"'+(f.mn!=null?' min="'+f.mn+'"':'')+(f.mx!=null?' max="'+f.mx+'"':'')+(f.t==='number'?' step="any"':'')+' placeholder="'+(f.mn!=null&&f.mx!=null?f.mn+'–'+f.mx:'')+'">'; }
+  else if(f.t==='array' && jeUrl(f)){ var a=v||[];
+    h='<div class="fl">'+a.map(function(u,i){return '<span class="fi">'+esc(u.split('/').pop().slice(-22))+' <button data-act="pz-fdel" data-k="'+f.k+'" data-i="'+i+'">×</button></span>'}).join('')
+      +(a.length<(f.mi||10)?'<button class="fb" data-act="pz-file" data-k="'+f.k+'" data-mn="1">+ Файл</button>':'')+'</div>'; }
+  else if(f.t==='array'){ h='<input type="text" id="'+id+'" data-fk="'+f.k+'" data-arr="1" value="'+esc((v||[]).join(', '))+'" placeholder="через запятую">'; }
+  else if(f.t==='object'){ return ''; }
+  else if(jeUrl(f)){ h='<div class="fl">'+(v?'<span class="fi">'+esc(String(v).split('/').pop().slice(-22))+' <button data-act="pz-fdel" data-k="'+f.k+'">×</button></span>':'<button class="fb" data-act="pz-file" data-k="'+f.k+'">+ Файл</button>')+'</div>'; }
+  else if(dlinniy(f)){ h='<textarea id="'+id+'" data-fk="'+f.k+'" style="min-height:'+(f.k==='prompt'||f.k==='text'||f.k==='lyrics'?120:70)+'px">'+esc(v||'')+'</textarea>'; }
+  else { h='<input type="text" id="'+id+'" data-fk="'+f.k+'" value="'+esc(v!=null?v:(f.v!=null?f.v:''))+'">'; }
+  return '<div class="pf">'+nm+h+dsc+'</div>';
+}
+function sobrat(m){
+  var o={}, prm='';
+  m.f.forEach(function(f){
+    var v=polVal(m,f.k);
+    if(v==null){ if(f.e) v=(f.v!=null?f.v:(f.r?f.e[0]:null)); else if(f.t==='boolean') v=(f.v!=null?f.v:(f.r?false:null)); else if(f.v!=null&&f.r) v=f.v; }
+    if(v==null||v===''||(Array.isArray(v)&&!v.length)) return;
+    if(f.t==='integer') v=parseInt(v,10); else if(f.t==='number') v=parseFloat(v);
+    if((f.t==='integer'||f.t==='number')&&isNaN(v)) return;
+    if(f.e && f.t!=='string' && !isNaN(+v)) v=+v;
+    o[f.k]=v; if(!prm && /prompt|text|lyrics/.test(f.k) && typeof v==='string') prm=v;
+  });
+  var net=m.f.filter(function(f){return f.r && o[f.k]==null && f.t!=='object'}).map(function(f){return f.k});
+  return {o:o,prm:prm,net:net};
+}
 S.pryamoy=function(){
-  var h='<button class="back" data-go="kabinet">'+svg('nazad')+'Назад</button><div class="title">Прямой режим</div>';
+  var h='<button class="back" data-go="kabinet">'+svg('nazad')+'Назад</button><div class="title">Студия</div>';
   if(!P) return h+'<div class="empty">Доступно только в приложении.</div>';
   if(!pzEst()){
-    return h+'<p class="sub" style="margin:0 0 16px">Временный режим для владельца: генерация идёт прямо с этого телефона, пока сайт не работает. Ключ хранится только в этом телефоне в зашифрованном виде и никуда не отправляется, кроме сервиса генерации.</p>'
+    return h+'<p class="sub" style="margin:0 0 16px">Все модели сайта прямо с телефона — по вашему ключу. Ключ хранится только в этом телефоне в зашифрованном виде и уходит только в сервис генерации.</p>'
       +'<div class="pz"><input type="password" id="pz-k" placeholder="Вставьте ключ" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
       +'<button class="btn a w" data-act="pz-sohr">Сохранить ключ</button>';
   }
-  var T=PZT[pzTip]; if(T.f.length && T.f.indexOf(pzFmt)<0) pzFmt=T.f[0];
-  h+='<p class="sub" style="margin:0 0 16px">Генерация напрямую с телефона. Каждый запуск списывает кредиты с вашего счёта сервиса.</p>'
-    +'<div class="chips">'+Object.keys(PZT).map(function(k){return '<button data-act="pz-tip" data-v="'+k+'" class="'+(k===pzTip?'on':'')+'">'+PZT[k].t+'</button>'}).join('')+'</div>'
-    +(T.f.length?'<div class="chips">'+T.f.map(function(f){return '<button data-act="pz-fmt" data-v="'+f+'" class="'+(f===pzFmt?'on':'')+'">'+f+'</button>'}).join('')+'</div>':'')
-    +'<textarea id="prompt" placeholder="'+(pzTip==='muzyka'?'О чём песня, жанр, голос':pzTip==='video'?'Что происходит в кадре, движение камеры, свет':'Что нарисовать')+'"></textarea>'
-    +'<button class="btn a w" data-act="pz-go">Создать · '+T.c+'</button>';
+  h+='<div class="chips">'+KAT.map(function(k){return '<button data-act="pz-kat" data-v="'+k[0]+'" class="'+(k[0]===pzKat?'on':'')+'">'+k[1]+(k[0]!=='chat'?' <small style="opacity:.6">'+modeliKat(k[0]).length+'</small>':'')+'</button>'}).join('')+'</div>';
+  if(pzKat==='chat'){
+    h+='<div class="pz"><select data-act2="chatm">'+CHATM.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===pzChatM?' selected':'')+'>'+c[1]+'</option>'}).join('')+'</select></div>';
+    h+='<div class="chat">'+(pzChatH.length?pzChatH.map(function(x){return '<div class="msg '+x.role+'">'+esc(x.content).replace(/\n/g,'<br>')+'</div>'}).join(''):'<div class="empty">Спросите что угодно: тексты, описания товаров, ответы покупателям, разбор задач.</div>')
+      +(pzChatZhdu?'<div class="msg assistant">Печатает…</div>':'')+'</div>';
+    h+='<textarea id="prompt" placeholder="Ваш вопрос" style="min-height:90px"></textarea><button class="btn a w" data-act="pz-chat">Отправить</button>'
+      +(pzChatH.length?'<button class="btn b w" data-act="pz-chat-new">Новый разговор</button>':'');
+  } else {
+    var l=modeliKat(pzKat), m=tekMod();
+    h+='<div class="pz"><select data-act2="model">'+l.map(function(x){return '<option value="'+esc(x.m)+'"'+(x===m?' selected':'')+'>'+esc(x.n)+'</option>'}).join('')+'</select></div>';
+    if(m){
+      var gl=m.f.filter(glavnoe), dop=m.f.filter(function(f){return !glavnoe(f)});
+      h+='<div class="forma">'+gl.map(function(f){return pole(m,f)}).join('')
+        +(dop.length?'<details><summary>Дополнительно ('+dop.length+')</summary>'+dop.map(function(f){return pole(m,f)}).join('')+'</details>':'')+'</div>'
+        +'<button class="btn a w" data-act="pz-start">Создать</button>';
+    }
+  }
   var z=pzList().slice().reverse();
-  h+='<h3>Мои запуски</h3>'+(z.length?z.map(pzKarta).join(''):'<div class="empty">Здесь появятся картинки, видео и песни. Обычно готово за 1–5 минут.</div>');
+  h+='<h3>Мои запуски</h3>'+(z.length?z.map(pzKarta).join(''):'<div class="empty">Здесь появятся результаты. Обычно готово за 1–5 минут, можно закрыть приложение.</div>');
   h+='<button class="btn b w" data-act="pz-udal" style="margin-top:18px">Удалить ключ</button>';
   return h;
+};
+/* окно подтверждения внутри страницы */
+function sprosit(t,da){
+  var el=document.getElementById('dlg');
+  el.innerHTML='<div class="dl"><p>'+esc(t)+'</p><div class="ry"><button class="btn b" data-dlg="0">Отмена</button><button class="btn a" data-dlg="1">Да</button></div></div>';
+  el.classList.add('on'); el._da=da;
+}
+document.addEventListener('click',function(e){ var b=e.target.closest('[data-dlg]'); if(!b) return; var el=document.getElementById('dlg'); el.classList.remove('on'); if(b.dataset.dlg==='1'&&el._da) el._da(); el._da=null; e.stopPropagation(); }, true);
+document.addEventListener('input',function(e){ var t=e.target; if(!t.dataset||!t.dataset.fk||cur!=='pryamoy') return; var m=tekMod(); if(!m) return;
+  setVal(m,t.dataset.fk, t.type==='checkbox'?t.checked:t.dataset.arr?t.value.split(',').map(function(s){return s.trim()}).filter(Boolean):t.value); });
+document.addEventListener('change',function(e){ var t=e.target; if(!t.dataset) return;
+  if(t.dataset.fk && cur==='pryamoy'){ var m=tekMod(); if(m) setVal(m,t.dataset.fk, t.type==='checkbox'?t.checked:t.value); return; }
+  if(t.dataset.act2==='model'){ pzMod[pzKat]=t.value; redraw(); }
+  if(t.dataset.act2==='chatm'){ pzChatM=t.value; }
+  if(t.id==='pz-fayl'){ var fs=[].slice.call(t.files||[]); t.value=''; fs.forEach(zagruzitFayl); }
+});
+function zagruzitFayl(file){
+  var kuda=pzZagrKuda.k, m=tekMod(); if(!kuda||!m) return;
+  if(file.size>30*1024*1024){ toast('Файл больше 30 МБ'); return; }
+  var id='z'+(++pzZagrId); pzZagrKuda[id]={m:m.m,k:kuda};
+  toast('Загружаю «'+file.name+'»…');
+  var r=new FileReader(); r.onload=function(){ var s=String(r.result); P.zagruzit(id, s.slice(s.indexOf(',')+1), file.name, file.type||''); }; r.readAsDataURL(file);
+}
+window.pzZagr=function(id,url,err){
+  var z=pzZagrKuda[id]; delete pzZagrKuda[id]; if(!z) return;
+  if(!url){ toast('Не загрузилось: '+(err||'')); return; }
+  var m=MOD.filter(function(x){return x.m===z.m})[0]; if(!m) return;
+  var f=m.f.filter(function(x){return x.k===z.k})[0];
+  if(f&&f.t==='array'){ var a=(polVal(m,z.k)||[]).slice(); a.push(url); setVal(m,z.k,a); } else setVal(m,z.k,url);
+  toast('Файл загружен'); if(cur==='pryamoy') redraw();
+};
+window.pzChat=function(t,err){
+  pzChatZhdu=false;
+  if(t==null){ toast('Ошибка: '+(err||'')); pzChatH.pop(); } else pzChatH.push({role:'assistant',content:t});
+  try{ localStorage.setItem('pz-chat',JSON.stringify(pzChatH.slice(-40))); }catch(e){}
+  if(cur==='pryamoy') redraw();
 };
 var PZK={video:'video',kartinki:'kartinka',muzyka:'muzyka',kino:'video',rabota:'kartinka'};
 var pzGot=-1;
 function pzGotovo(){ return pzList().filter(function(x){return x.st==='gotovo'}).length; }
 window.pryamoyObnovit=function(){
-  var g=pzGotovo(); if(pzGot>=0 && g>pzGot) toast('Готово! Результат в «Прямом режиме»'); pzGot=g;
+  var g=pzGotovo(); if(pzGot>=0 && g>pzGot) toast('Готово! Результат в «Студии»'); pzGot=g;
   if(cur==='pryamoy'||cur==='fayly') redraw();
 };
 setInterval(function(){ if(document.hidden||!P) return; if(pzGot<0) pzGot=pzGotovo(); if(pzList().some(function(x){return x.st==='idet'})) P.proverit(); }, 6000);
@@ -421,21 +544,29 @@ function pzKlik(d){
   var a=d.act;
   if(a==='pz-tap'){ var n=Date.now(); tapV = n-tapT<1500 ? tapV+1 : 1; tapT=n; if(tapV>=5){ tapV=0; show('pryamoy'); } return true; }
   if(a==='pz-sohr'){ var v=(document.getElementById('pz-k').value||'').trim(); if(P.sohranit(v)){ toast('Ключ сохранён в телефоне'); show('pryamoy'); } else toast('Не получилось сохранить ключ'); return true; }
-  if(a==='pz-udal'){ if(confirm('Удалить ключ из телефона? Прямой режим выключится.')){ P.udalit(); toast('Ключ удалён'); show('kabinet'); } return true; }
+  if(a==='pz-udal'){ sprosit('Удалить ключ из телефона? Студия выключится.',function(){ P.udalit(); toast('Ключ удалён'); show('kabinet'); }); return true; }
+  if(a==='pz-kat'){ pzKat=d.v; redraw(); return true; }
+  if(a==='pz-file'){ pzZagrKuda.k=d.k; var fi=document.getElementById('pz-fayl'); fi.multiple=!!d.mn; fi.click(); return true; }
+  if(a==='pz-fdel'){ var mm=tekMod(); if(mm){ if(d.i!=null){ var ar=(polVal(mm,d.k)||[]).slice(); ar.splice(+d.i,1); setVal(mm,d.k,ar); } else setVal(mm,d.k,null); redraw(); } return true; }
+  if(a==='pz-start'){ var m=tekMod(); if(!m) return true; var sb=sobrat(m);
+    if(sb.net.length){ toast('Заполните: '+sb.net.join(', ')); return true; }
+    sprosit('Запустить «'+m.n+'»? Спишутся кредиты с вашего счёта сервиса.',function(){ P.zapuskModel(m.m, JSON.stringify(sb.o), m.n, m.c, sb.prm); toast('Запущено — результат появится ниже'); });
+    return true; }
+  if(a==='pz-chat'){ var q=(document.getElementById('prompt').value||'').trim(); if(!q||pzChatZhdu) return true;
+    pzChatH.push({role:'user',content:q}); pzChatZhdu=true; document.getElementById('prompt').value=''; P.chat(pzChatM, JSON.stringify(pzChatH.slice(-20))); redraw(); return true; }
+  if(a==='pz-chat-new'){ pzChatH=[]; try{localStorage.removeItem('pz-chat')}catch(e){} redraw(); return true; }
   if(a==='pz-tip'){ pzTip=d.v; redraw(); return true; }
   if(a==='pz-fmt'){ pzFmt=d.v; redraw(); return true; }
   if(a==='pz-go'){
     var t=(document.getElementById('prompt').value||'').trim(); if(!t){ toast('Опишите, что создать'); return true; }
-    if(!confirm('Запустить «'+PZT[pzTip].t+'»? Спишется '+PZT[pzTip].c+'.')) return true;
-    P.zapusk(pzTip, t, PZT[pzTip].f.length?pzFmt:''); document.getElementById('prompt').value=''; toast('Запущено — результат появится ниже'); return true;
+    sprosit('Запустить «'+PZT[pzTip].t+'»? Спишется '+PZT[pzTip].c+'.',function(){ P.zapusk(pzTip, t, PZT[pzTip].f.length?pzFmt:''); toast('Запущено — результат появится ниже'); }); return true;
   }
   if(a==='pz-razdel'){
     var tx=(document.getElementById('prompt').value||'').trim(), tp=PZK[d.k]; if(!tx){ toast('Опишите, что создать'); return true; }
     if(d.k==='rabota') tx='Инфографика для карточки товара маркетплейса, вертикально 3:4, крупный заголовок и 3–4 преимущества, текст на русском: '+tx;
-    if(!confirm('Запустить «'+PZT[tp].t+'»? Спишется '+PZT[tp].c+'.')) return true;
-    P.zapusk(tp, tx, tp==='video'?(d.k==='kino'?'16:9':'9:16'):tp==='kartinka'?'3:4':'');
-    try{sessionStorage.removeItem('ch-'+d.k)}catch(x){}
-    pzTip=tp; toast('Запущено — результат появится здесь'); show('pryamoy'); return true;
+    sprosit('Запустить «'+PZT[tp].t+'»? Спишется '+PZT[tp].c+'.',function(){ P.zapusk(tp, tx, tp==='video'?(d.k==='kino'?'16:9':'9:16'):tp==='kartinka'?'3:4':'');
+      try{sessionStorage.removeItem('ch-'+d.k)}catch(x){}
+      pzKat=d.k==='kino'?'video':d.k==='rabota'?'kartinki':d.k; toast('Запущено — результат появится здесь'); show('pryamoy'); }); return true;
   }
   if(a==='pz-ubrat'){ P.ubrat(d.id); redraw(); return true; }
   if(a==='pz-snova'){ var x=pzList().filter(function(y){return y.id===d.id})[0]; if(x){ pzTip=x.tip; show('pryamoy'); var q=document.getElementById('prompt'); if(q) q.value=x.prompt; } return true; }

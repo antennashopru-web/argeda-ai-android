@@ -133,7 +133,7 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 .razdel-pr{margin-bottom:6px}
 .razdel-pr .lenta{margin-bottom:18px}
 #pros{position:fixed;inset:0;z-index:20;background:rgba(5,6,10,.96);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 16px 24px}
-#pros.on{display:flex}
+#pros.on{display:flex}#pros{color:#fff;background:#05060a!important}#pros .btn{margin-top:10px}#pros .btn.b{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}#pros .tx small{color:#b7bccb}
 #pros .x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:var(--knopka);display:flex;align-items:center;justify-content:center}
 #pros .x svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2}
 #pros .med{max-width:100%;max-height:58vh;border-radius:20px;background:#000}
@@ -388,12 +388,37 @@ function heroArt(){
     +[[40,30],[300,40],[330,260],[60,380],[310,420],[200,330],[150,60],[280,330]].map(function(p){return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="1.4" fill="#ffd7a0" fill-opacity=".7"/>'}).join('')
     +'<rect width="358" height="470" fill="url(#hz)"/></svg>';
 }
+var MES=['янв.','февр.','марта','апр.','мая','июня','июля','авг.','сент.','окт.','нояб.','дек.'];
+function fBaza(n){ return String(n||'').split('/').pop().split('?')[0].replace(/\.[a-z0-9]{2,4}$/i,'').replace(/\s*\(\d+\)$/,'').toLowerCase(); }
+function fKarta(){ try{ return JSON.parse(localStorage.getItem('f-nazv')||'{}'); }catch(e){ return {}; } }
+function fNaiti(baza){ if(!baza||baza.length<5) return null; var o=null;
+  pzList().forEach(function(x){ if(o) return; var tr=plTreki(x); for(var i=0;i<tr.length;i++) if(fBaza(tr[i].url)===baza||tr[i].url.toLowerCase().indexOf(baza)>=0){ o={nazv:tr[i].title,img:tr[i].img}; return; }
+    (x.urls||[]).forEach(function(u){ if(!o&&(fBaza(u)===baza||String(u).toLowerCase().indexOf(baza)>=0)) o={nazv:String(x.nazv||x.prompt||'').replace(/^[^:]{2,20}: /,'')}; }); });
+  return o; }
+function fZapomnit(url){ var b=fBaza(url), n=fNaiti(b); if(!n||!n.nazv) return; var k=fKarta(); k[b]={nazv:n.nazv,img:n.img||''}; try{ localStorage.setItem('f-nazv',JSON.stringify(k)); }catch(e){} }
+function fVid(m){ return m.indexOf('image/')===0?'Картинка':m.indexOf('video/')===0?'Видео':m.indexOf('audio/')===0?'Песня':'Файл'; }
+function fImya(x){ var b=fBaza(x.name), k=fKarta()[b]||fNaiti(b), m=x.mime||'';
+  var n=k&&k.nazv?String(k.nazv).trim():'';
+  if(!n){ var raw=String(x.name||'').replace(/\.[a-z0-9]{2,4}$/i,'');
+    if(/^[0-9a-f]{8}-[0-9a-f]{4}|^[0-9a-f]{12,}|^(image|img|video|audio|file|output|result|download)[ _-]?[0-9a-z]{0,3}[0-9a-f]{5,}|^\d{8,}/i.test(raw)||!raw){ var d=new Date(x.t||Date.now()); n=fVid(m)+' от '+d.getDate()+' '+MES[d.getMonth()]; }
+    else n=raw.replace(/[_]+/g,' '); }
+  if(n.length>60) n=n.slice(0,57).trim()+'…';
+  return {nazv:n,img:k&&k.img||''}; }
+function fOtkryt(i){ var x=window._f[i], el=document.getElementById('pros'); if(!x) return; var m=x.mime||'', im=fImya(x);
+  if(m.indexOf('audio/')===0){ PL.q=[{url:x.uri,title:im.nazv,img:im.img,dur:0,tekst:'',stil:'',n:1}]; PL.i=0; PL.skryt=false; plZapusk(); PL.polnyy=true; plRis(); return; }
+  if(m.indexOf('image/')!==0&&m.indexOf('video/')!==0){ K&&K.otkrytFayl(x.uri,m); return; }
+  prosI=-1;
+  var med=m.indexOf('video/')===0?'<video class="med" src="'+esc(x.uri)+'" controls autoplay playsinline></video>':'<img class="med" src="'+esc(x.uri)+'" alt="">';
+  el.innerHTML='<button class="x" data-act="zakryt">'+svg('x')+'</button>'+med+'<div class="tx"><b>'+esc(im.nazv)+'</b><small>'+fVid(m)+' · '+kogda(x.t)+' · сохранено в телефоне</small>'
+    +'<button class="btn a w" data-fs="'+i+'">Поделиться</button><button class="btn b w" data-act="f-vne" data-v="'+i+'">Открыть в галерее</button></div>';
+  el.classList.add('on'); }
 function workFile(x,i){
-  var m=x.mime||'', pr;
+  var m=x.mime||'', pr, im=fImya(x);
   if(m.indexOf('image/')===0) pr='<img loading="lazy" src="'+esc(x.uri)+'" alt="" onerror="this.style.display=\'none\'">';
+  else if(m.indexOf('audio/')===0&&im.img) pr='<img loading="lazy" src="'+esc(im.img)+'" alt="" onerror="this.style.display=\'none\'">';
   else pr=art(m.indexOf('video/')===0?'video':m.indexOf('audio/')===0?'muzyka':'rabota');
   var vid = m.indexOf('image/')===0?'Картинка':m.indexOf('video/')===0?'Видео':m.indexOf('audio/')===0?'Музыка':'Файл';
-  return '<div class="work" data-f="'+i+'"><div class="pr">'+pr+'<em>Готово</em><span class="sh" data-fs="'+i+'">'+svg('share')+'</span></div><div class="op"><b>'+esc(x.name)+'</b><small>'+vid+' · '+kogda(x.t)+'</small></div></div>';
+  return '<div class="work" data-f="'+i+'"><div class="pr">'+pr+'<em>Готово</em><span class="sh" data-fs="'+i+'">'+svg('share')+'</span></div><div class="op"><b>'+esc(im.nazv)+'</b><small>'+vid+' · '+kogda(x.t)+'</small></div></div>';
 }
 
 var S = {
@@ -583,7 +608,7 @@ function plKlik(d,el){
   if(a==='pl-skok'){ plA.currentTime=Math.max(0,Math.min((plA.duration||0)-0.5,plA.currentTime+ +d.v)); return true; }
   if(a==='pl-spd'){ var s=[1,1.25,1.5,2,0.75]; PL.spd=s[(s.indexOf(PL.spd)+1)%s.length]; plA.playbackRate=PL.spd; plRis(); return true; }
   if(a==='pl-tekst'){ PL.tekst=!PL.tekst; plRis(); return true; }
-  if(a==='pl-save'){ if(t) P.skachat(t.url,'audio/mpeg'); return true; }
+  if(a==='pl-save'){ if(t&&/^https:/.test(t.url)){ fZapomnit(t.url); P.skachat(t.url,'audio/mpeg'); } else if(t) toast('Песня уже в телефоне'); return true; }
   if(a==='pl-q'){ PL.i=+d.v; plZapusk(); return true; }
   return false;
 }
@@ -1048,7 +1073,7 @@ function pzKlik(d){
   }
   if(a==='pz-ubrat'){ P.ubrat(d.id); redraw(); return true; }
   if(a==='pz-snova'){ var x=pzList().filter(function(y){return y.id===d.id})[0]; if(x){ pzTip=x.tip; show('pryamoy'); var q=document.getElementById('prompt'); if(q) q.value=x.prompt; } return true; }
-  if(a==='pz-skachat'){ P.skachat(d.u, d.m); return true; }
+  if(a==='pz-skachat'){ fZapomnit(d.u); P.skachat(d.u, d.m); return true; }
   return false;
 }
 
@@ -1087,7 +1112,8 @@ document.addEventListener('click',function(e){
   if(d.r){ if(podel){ try{sessionStorage.setItem('ch-'+d.r,podel)}catch(x){} podel=null; } show('razdel',d.r); return; }
   if(d.site){ if(!K) return; if(st==='net'){ K.kopiya(d.site); retry(); return; } K.razdel(d.site,''); return; }
   if(d.kop){ K&&K.kopiya(d.kop); return; }
-  if(d.f!=null&&!e.target.closest('[data-fs]')){ var x=window._f[+d.f]; if(x&&K) K.otkrytFayl(x.uri,x.mime); return; }
+  if(d.f!=null&&!e.target.closest('[data-fs]')){ fOtkryt(+d.f); return; }
+  if(d.act==='f-vne'){ var xv=window._f[+d.v]; if(xv&&K) K.otkrytFayl(xv.uri,xv.mime); return; }
   if(d.fs!=null){ var y=window._f[+d.fs]; if(y&&K) K.podelitsya(y.uri,y.mime); return; }
   if(d.zd!=null){ K&&K.ubratZadanie(+d.zd); redraw(); return; }
   if(d.z!=null){ if(st==='net'){ toast('Отправится, когда сервер заработает'); retry(); return; } K&&K.otpravitZadanie(+d.z); return; }

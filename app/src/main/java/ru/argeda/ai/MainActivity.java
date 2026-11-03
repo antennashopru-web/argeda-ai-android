@@ -209,6 +209,7 @@ public class MainActivity extends Activity {
     }
 
     /** Android 15 draws under the system bars: pad the content by bars + keyboard ourselves. */
+    private int imeBylo = 0;
     private void applyInsets() {
         View root = findViewById(android.R.id.content);
         if (Build.VERSION.SDK_INT >= 30) {
@@ -216,6 +217,11 @@ public class MainActivity extends Activity {
                 android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
                 android.graphics.Insets ime = insets.getInsets(android.view.WindowInsets.Type.ime());
                 v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, ime.bottom));
+                if (imeBylo > 0 && ime.bottom == 0) {   // keyboard closed: let the offline page re-pin its sticky header
+                    View off = findViewById(R.id.offline);
+                    if (off instanceof WebView) off.postDelayed(() -> ((WebView) off).evaluateJavascript("window.karkasPerekladka&&karkasPerekladka()", null), 250);
+                }
+                imeBylo = ime.bottom;
                 return android.view.WindowInsets.CONSUMED;
             });
         } else {
@@ -420,7 +426,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.5");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.6");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);

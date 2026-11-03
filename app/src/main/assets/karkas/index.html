@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>ARGEDA</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
@@ -111,7 +111,7 @@ h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--tekst
 /* нижняя панель */
 nav{position:fixed;left:12px;right:12px;bottom:12px;z-index:6;max-width:520px;margin:0 auto;height:72px;display:flex;align-items:center;justify-content:space-around;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--liniya);border-radius:24px}
 nav button{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--tekst2);min-width:66px}
-nav .ik{width:24px;height:24px;border-radius:7px;border:2px solid currentColor}
+nav .ik{width:24px;height:24px;display:block}nav .ik svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--tekst)}
 nav .plus{width:40px;height:30px;border-radius:10px;background:linear-gradient(90deg,var(--a1),var(--a2));display:flex;align-items:center;justify-content:center;margin-top:-2px}
 nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;fill:none}
@@ -196,9 +196,9 @@ details[open] summary{margin-bottom:12px}
 .mzist{display:grid;gap:6px;margin-bottom:8px}.mzist button{text-align:left;background:var(--pov1);border:1px solid var(--liniya);border-radius:14px;padding:10px 12px;color:var(--tekst);font:inherit}.mzist button.on{border-color:#ff9a3c;box-shadow:0 0 0 1px #ff9a3c inset}.mzist small{display:block;color:var(--tekst3);font-size:12px}
 .mzop{margin:-4px 0 12px;display:grid;gap:6px}.mzop div{display:flex;gap:8px;align-items:center}.mzop span{flex:1;color:var(--tekst2);font-size:13px}.mzop button{font-size:13px;font-weight:700;padding:8px 12px;border-radius:12px;background:var(--knopka);color:var(--tekst);border:0}
 #plmini{position:fixed;left:12px;right:12px;bottom:92px;z-index:6;max-width:520px;margin:0 auto;display:none;align-items:center;gap:6px;padding:8px 10px 10px;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--liniya);border-radius:20px;overflow:hidden}
-#plmini.on{display:flex}body.s-pleerom main,body.s-pleerom .wrap{padding-bottom:90px}
+#plmini.on{display:flex}body.s-pleerom{padding-bottom:190px}
 .plm,.trm,.plr{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;color:var(--tekst);font:inherit;text-align:left}
-.plo{width:48px;height:48px;border-radius:12px;flex:none;overflow:hidden;position:relative}.plo img,.plk img{width:100%;height:100%;object-fit:cover;display:block}
+.plo{width:48px;height:48px;border-radius:12px;flex:none;overflow:hidden;position:relative}.plo img,.plk img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}.plo,.plk{position:relative;display:grid;place-items:center}.pln8{width:46%;height:46%;fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .plt{min-width:0;display:flex;flex-direction:column;gap:2px}.plt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.plt small{color:var(--tekst3);font-size:12.5px}
 .plb{width:42px;height:42px;flex:none;border-radius:50%;border:0;background:none;color:var(--tekst);display:grid;place-items:center;padding:0;position:relative}.plb svg{width:22px;height:22px}
 .plb.a,.plb.big{background:linear-gradient(135deg,#ffb35c,#ff6a4d);color:#1a1206}.plb.x{background:var(--knopka)}.plb.vkl{background:rgba(255,154,60,.18);color:#ff8a3c}.plb em{position:absolute;font-size:9px;font-style:normal;font-weight:800;top:9px;right:9px}
@@ -230,10 +230,10 @@ details[open] summary{margin-bottom:12px}
 <main class="wrap" id="app"></main>
 <div id="plmini"></div><div id="pleer"></div>
 <nav id="nav">
-  <button data-go="glavnaya"><span class="ik"></span>Главная</button>
+  <button data-go="glavnaya"><span class="ik"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg></span>Главная</button>
   <button data-go="sozdat"><span class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Создать</button>
-  <button data-go="fayly"><span class="ik"></span>Мои файлы</button>
-  <button data-go="kabinet"><span class="ik"></span>Кабинет</button>
+  <button data-go="fayly"><span class="ik"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Мои файлы</button>
+  <button data-go="kabinet"><span class="ik"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Кабинет</button>
 </nav>
 <div class="toast" id="toast"></div>
 <div id="pros"></div>
@@ -362,6 +362,7 @@ function noteHtml(){
   if(st==='ok') return '<div class="note ok">'+svg('wifi')+'<div><b>Сайт работает</b><span>Выберите раздел — или вернитесь на сайт.</span><br><button data-act="nasayt">Открыть сайт</button></div></div>';
   if(st!=='net') return '';
   var set = K ? K.set() : navigator.onLine, n = zadaniya().length;
+  if(set && pzEst()) return '';
   return '<div class="note">'+svg('wifi')+'<div><b>'+(set?'Сервер сейчас не отвечает':'Нет интернета')+'</b><span>'
     +(set?'Можно подготовить задание — оно отправится, когда сервер заработает. Связь проверяется сама.':'Включите интернет — приложение подключится само. Задания можно готовить уже сейчас.')
     +(n?' Ждут отправки: '+n+'.':'')+'</span><br><button data-act="retry">Проверить сейчас</button></div></div>';
@@ -486,7 +487,7 @@ function plTek(){ return PL.q[PL.i]; }
 function plHash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function plVolna(u,n){ var h=plHash(u||'x'), o=[]; for(var i=0;i<n;i++){ h=Math.imul(h^(h>>>13),1103515245)+12345>>>0; var env=0.45+0.55*Math.sin(Math.PI*i/n); o.push(Math.round((0.25+0.75*((h%1000)/1000))*env*100)); } return o; }
 function plGrad(u){ var h=plHash(u||'x')%360; return 'linear-gradient(135deg,hsl('+h+',75%,62%),hsl('+((h+70)%360)+',60%,28%))'; }
-function plObl(t,cls){ return '<span class="'+cls+'" style="background:'+plGrad(t&&t.url)+'">'+(t&&t.img?'<img src="'+esc(t.img)+'" alt="" onerror="this.remove()">':'')+'</span>'; }
+function plObl(t,cls){ return '<span class="'+cls+'" style="background:'+plGrad(t&&t.url)+'"><svg class="pln8" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>'+(t&&t.img?'<img src="'+esc(t.img)+'" alt="" onerror="this.remove()">':'')+'</span>'; }
 function plVremya(s){ s=Math.max(0,Math.floor(s||0)); return Math.floor(s/60)+':'+('0'+s%60).slice(-2); }
 function plIgrat(url){
   var v=plVse(), i=-1; v.forEach(function(t,j){ if(t.url===url) i=j; }); if(i<0) return;
@@ -989,6 +990,7 @@ function show(name,k){
   cur=name; curK=k||null;
   var a=document.getElementById('app');
   a.innerHTML = name==='razdel' ? S.razdel(k) : S[name]();
+  try{ chipObnovit(); }catch(e){}
   [].forEach.call(document.querySelectorAll('nav button'),function(b){b.classList.toggle('on',b.dataset.go===(name==='razdel'?prev:name))});
   window.scrollTo(0,0);
 }
@@ -998,7 +1000,12 @@ function sostoyanie(s){
   st = s==='proverka'||s==='ok' ? s : 'net';
   var c=document.getElementById('chip');
   c.className='chip'+(st==='proverka'?' proverka':st==='ok'?' ok':'');
-  document.getElementById('chip-t').textContent = st==='proverka' ? 'Подключаюсь…' : st==='ok' ? 'Сайт работает' : ((K?K.set():navigator.onLine) ? 'Сервер недоступен' : 'Нет интернета');
+  chipObnovit();
+}
+function chipObnovit(){
+  var c=document.getElementById('chip'), on=(K?K.set():navigator.onLine), tel=st==='net'&&on&&pzEst();
+  c.className='chip'+(st==='proverka'?' proverka':(st==='ok'||tel)?' ok':'');
+  document.getElementById('chip-t').textContent = st==='proverka' ? 'Подключаюсь…' : st==='ok' ? 'Сайт работает' : tel ? 'Работает с телефона' : on ? 'Сайт недоступен' : 'Нет интернета';
 }
 
 document.addEventListener('input',function(e){ if(e.target.id==='prompt'&&curK) try{sessionStorage.setItem('ch-'+curK,e.target.value)}catch(x){} });
@@ -1045,6 +1052,8 @@ document.addEventListener('click',function(e){
 function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povtorit(); }
 
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
+window.karkasPerekladka=function(){ var y=window.scrollY; window.scrollTo(0,y+1); window.scrollTo(0,y); };
+if(window.visualViewport) visualViewport.addEventListener('resize',function(){ var a=document.activeElement; if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)) return; if(visualViewport.offsetTop>0.5) window.karkasPerekladka(); });
 window.karkasNazad=function(){ if(PL.polnyy){ PL.polnyy=false; plRis(); return 'ok'; } if(zakrytProsmotr()) return 'ok'; if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
 window.karkasEkran=function(o){ if(!o) return; if(o.t) podel=o.t; if(S[o.n]||o.n==='razdel') show(o.n, o.k||null); };
 sostoyanie(K ? K.sostoyanie() : 'proverka');

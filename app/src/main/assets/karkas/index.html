@@ -110,6 +110,7 @@ h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--tekst
 .title{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:38px;line-height:1;margin:22px 0 8px}
 /* нижняя панель */
 nav{position:fixed;left:12px;right:12px;bottom:12px;z-index:6;max-width:520px;margin:0 auto;height:72px;display:flex;align-items:center;justify-content:space-around;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--liniya);border-radius:24px}
+body.klav nav,body.klav #plmini{display:none!important}body.klav{padding-bottom:16px!important}
 nav button{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--tekst2);min-width:66px}
 nav .ik{width:24px;height:24px;display:block}nav .ik svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--tekst)}
@@ -1068,9 +1069,9 @@ function sostoyanie(s){
   chipObnovit();
 }
 function chipObnovit(){
-  var c=document.getElementById('chip'), on=(K?K.set():navigator.onLine), tel=st==='net'&&on&&pzEst();
-  c.className='chip'+(st==='proverka'?' proverka':(st==='ok'||tel)?' ok':'');
-  document.getElementById('chip-t').textContent = st==='proverka' ? 'Подключаюсь…' : st==='ok' ? 'Сайт работает' : tel ? 'Работает с телефона' : on ? 'Сайт недоступен' : 'Нет интернета';
+  var c=document.getElementById('chip'), on=(K?K.set():navigator.onLine), tel=st!=='ok'&&on&&pzEst();
+  c.className='chip'+((st==='ok'||tel)?' ok':st==='proverka'?' proverka':'');
+  document.getElementById('chip-t').textContent = st==='ok' ? 'Сайт работает' : tel ? 'Работает с телефона' : st==='proverka' ? 'Подключаюсь…' : on ? 'Сайт недоступен' : 'Нет интернета';
 }
 
 document.addEventListener('input',function(e){ if(e.target.id==='prompt'&&curK) try{sessionStorage.setItem('ch-'+curK,e.target.value)}catch(x){} });
@@ -1118,7 +1119,11 @@ document.addEventListener('click',function(e){
 function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povtorit(); }
 
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
-window.karkasPerekladka=function(){ var y=window.scrollY; window.scrollTo(0,y+1); window.scrollTo(0,y); };
+function klavPole(a){ return a&&(a.tagName==='TEXTAREA'||a.tagName==='SELECT'&&false||a.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range|file|color)$/.test(a.type)||a.isContentEditable); }
+window.karkasKlav=function(on){ document.body.classList.toggle('klav',!!on); if(on){ var a=document.activeElement; if(klavPole(a)) setTimeout(function(){ try{ a.scrollIntoView({block:'center'}); }catch(e){} },120); } };
+document.addEventListener('focusin',function(e){ if(klavPole(e.target)) window.karkasKlav(true); });
+document.addEventListener('focusout',function(){ setTimeout(function(){ if(!klavPole(document.activeElement)) document.body.classList.remove('klav'); },150); });
+window.karkasPerekladka=function(){ document.body.classList.remove('klav'); var ae=document.activeElement; if(klavPole(ae)) ae.blur();  var y=window.scrollY; window.scrollTo(0,y+1); window.scrollTo(0,y); };
 if(window.visualViewport) visualViewport.addEventListener('resize',function(){ var a=document.activeElement; if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)) return; if(visualViewport.offsetTop>0.5) window.karkasPerekladka(); });
 window.karkasNazad=function(){ if(PL.polnyy){ PL.polnyy=false; plRis(); return 'ok'; } if(zakrytProsmotr()) return 'ok'; if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur==='pryamoy'&&pzNazad){ show('razdel',pzNazad); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
 window.karkasEkran=function(o){ if(!o) return; if(o.t) podel=o.t; if(S[o.n]||o.n==='razdel') show(o.n, o.k||null); };

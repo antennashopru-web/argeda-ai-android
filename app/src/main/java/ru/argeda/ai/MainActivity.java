@@ -225,6 +225,11 @@ public class MainActivity extends Activity {
                     View off = findViewById(R.id.offline);
                     if (off instanceof WebView) off.postDelayed(() -> ((WebView) off).evaluateJavascript("window.karkasPerekladka&&karkasPerekladka()", null), 250);
                 }
+                if ((imeBylo > 0) != (ime.bottom > 0)) {   // tell the offline page: hide menu and mini player while typing
+                    View off = findViewById(R.id.offline);
+                    final boolean otkr = ime.bottom > 0;
+                    if (off instanceof WebView) ((WebView) off).evaluateJavascript("window.karkasKlav&&karkasKlav(" + otkr + ")", null);
+                }
                 imeBylo = ime.bottom;
                 return android.view.WindowInsets.CONSUMED;
             });
@@ -430,7 +435,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.9");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/4.0");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);

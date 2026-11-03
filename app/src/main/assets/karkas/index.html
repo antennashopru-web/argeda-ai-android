@@ -108,6 +108,28 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#232838;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
 .toast.on{opacity:1}
 .foot{color:var(--tekst2);font-size:12px;text-align:center;margin:22px 0}
+/* примеры работ */
+.lenta{display:flex;gap:10px;overflow-x:auto;margin:0 -16px 30px;padding:0 16px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.lenta::-webkit-scrollbar{display:none}
+.pm{flex:none;width:150px;scroll-snap-align:start;text-align:left}
+.pm .kd{position:relative;display:block;aspect-ratio:9/16;border-radius:18px;overflow:hidden;background:var(--pov1);border:1px solid var(--liniya)}
+.pm.f .kd{aspect-ratio:3/4}
+.pm.c{width:128px}
+.pm .kd video,.pm .kd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pm .kd i{position:absolute;left:8px;top:8px;font-style:normal;font-size:11px;font-weight:700;padding:4px 8px;border-radius:99px;background:rgba(9,11,17,.62);color:#fff;backdrop-filter:blur(6px)}
+.pm b{display:block;font-weight:700;font-size:13.5px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm small{display:block;color:var(--tekst2);font-size:12px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.razdel-pr{margin-bottom:6px}
+.razdel-pr .lenta{margin-bottom:18px}
+#pros{position:fixed;inset:0;z-index:20;background:rgba(5,6,10,.96);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 16px 24px}
+#pros.on{display:flex}
+#pros .x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:var(--knopka);display:flex;align-items:center;justify-content:center}
+#pros .x svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2}
+#pros .med{max-width:100%;max-height:58vh;border-radius:20px;background:#000}
+#pros .tx{width:100%;max-width:420px;margin-top:16px}
+#pros .tx b{display:block;font-family:Unbounded;font-weight:600;font-size:18px;letter-spacing:-.03em}
+#pros .tx small{display:block;color:var(--tekst2);font-size:13.5px;margin-top:4px}
+#pros .tx em{display:block;font-style:normal;color:#6b7186;font-size:11.5px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -120,6 +142,7 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
   <button data-go="kabinet"><span class="ik"></span>Кабинет</button>
 </nav>
 <div class="toast" id="toast"></div>
+<div id="pros"></div>
 
 <script>
 (function(){
@@ -128,6 +151,7 @@ var G = {
   share:'<path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"/>',
   dalee:'<path d="M9 6l6 6-6 6"/>',
   nazad:'<path d="M15 6l-6 6 6 6"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
   wifi:'<path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><circle cx="12" cy="19.5" r="1"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/>',
   koshelek:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12h2M3 9h18"/>',
@@ -174,6 +198,52 @@ var R = [
   {k:'rabota',t:'Для работы',s:'WB, Ozon, документы',d:'Карточки товара, магазины, расчёты',p:'/rabota',
    u:['Карточка для WB и Ozon','Инфографика','Документы'],ph:'Какой товар: название, главные преимущества, для какого маркетплейса'}
 ];
+
+/* примеры: только свои ИИ-работы и ролики со свободными правами */
+var PV = [
+  {v:'video-zaryadka',t:'Зарядка 1949',s:'Ваше лицо в старой хронике',k:'video',vir:1,c:'Хроника 1949 г., Prelinger Archives (общественное достояние)',ph:'Вставить меня в ролик «Зарядка 1949» по моему фото'},
+  {v:'video-amsterdam',t:'Прогулка по Амстердаму',s:'Вы — герой кино',k:'video',vir:1,c:'«Tears of Steel» © Blender Foundation, mango.blender.org, CC BY 3.0',ph:'Вставить меня в ролик «Прогулка по Амстердаму» по моему фото'},
+  {v:'video-klip',t:'Клип «Мой дом»',s:'Клип по песне за вечер',k:'kino',c:'Сделано в ARGEDA AI',ph:'Клип на мою песню: деревянный дом в горах, бабушка выносит хлеб, закат над долиной'}
+];
+var PF = [
+  {f:'foto-portret',t:'Кинопортрет',s:'Ночной город, дождь',k:'kartinki',ph:'Кинопортрет девушки в красном пальто на ночной улице старого города, дождь, неон, отражения в брусчатке'},
+  {f:'foto-gory',t:'Пейзаж',s:'Монастырь в горах',k:'kartinki',ph:'Горы на рассвете, древний каменный монастырь на скале, туман в долине, золотой свет'},
+  {f:'foto-lis',t:'Иллюстрация',s:'Для детской книги',k:'kartinki',ph:'Лисёнок-космонавт сидит на Луне и смотрит на Землю, мягкая живопись, звёзды'},
+  {f:'foto-kofe',t:'Предметное фото',s:'Для меню и рекламы',k:'kartinki',ph:'Чашка кофе с паром на тёмном деревянном столе, утренний свет из окна, зёрна вокруг, рекламная съёмка'}
+];
+var PK = [
+  {f:'kartochka-obuv-sport',t:'Кроссовки',s:'Стиль «Спорт»',k:'rabota',ph:'Карточка для WB: беговые кроссовки, дышащая сетка, амортизация, вес 240 г'},
+  {f:'kartochka-kosmetika-eko',t:'Крем для лица',s:'Стиль «Эко»',k:'rabota',ph:'Карточка для WB: крем для лица, увлажнение 24 часа, без парабенов'},
+  {f:'kartochka-tehnika-tehno',t:'Пульт для ТВ',s:'Стиль «Техно»',k:'rabota',ph:'Карточка для WB: пульт для телевизора, дальность 8 м, кнопки Smart Hub и Netflix'},
+  {f:'kartochka-eda-dom',t:'Кофе в зёрнах',s:'Стиль «Домашний»',k:'rabota',ph:'Карточка для WB: кофе в зёрнах 1 кг, арабика 100 %, средняя обжарка'}
+];
+var PALL = PV.concat(PF, PK);
+function pmVideo(x){ var i=PALL.indexOf(x);
+  return '<button class="pm" data-pm="'+i+'"><span class="kd"><video src="primery/'+x.v+'.mp4" poster="primery/'+x.v+'.webp" muted loop autoplay playsinline preload="auto"></video><i>'+(x.vir?'Ваше фото':'Ролик')+'</i></span><b>'+x.t+'</b><small>'+x.s+'</small></button>'; }
+function pmFoto(x,c){ var i=PALL.indexOf(x);
+  return '<button class="pm '+(c||'f')+'" data-pm="'+i+'"><span class="kd"><img loading="lazy" src="primery/'+x.f+'.webp" alt=""></span><b>'+x.t+'</b><small>'+x.s+'</small></button>'; }
+function lentaV(a){ return '<div class="lenta">'+a.map(pmVideo).join('')+'</div>'; }
+function lentaF(a,c){ return '<div class="lenta">'+a.map(function(x){return pmFoto(x,c)}).join('')+'</div>'; }
+function primeryRazdela(k){
+  var h='';
+  if(k==='video') h=lentaV(PV.filter(function(x){return x.vir}));
+  else if(k==='kino') h=lentaV(PV.filter(function(x){return x.k==='kino'}).concat(PV.filter(function(x){return x.vir})));
+  else if(k==='kartinki') h=lentaF(PF);
+  else if(k==='rabota') h=lentaF(PK,'f c');
+  return h ? '<div class="razdel-pr"><h3 style="margin-top:4px">Примеры</h3>'+h+'</div>' : '';
+}
+var prosI=-1;
+function prosmotr(i){
+  var x=PALL[i], el=document.getElementById('pros'); if(!x) return; prosI=i;
+  var med = x.v ? '<video class="med" src="primery/'+x.v+'.mp4" poster="primery/'+x.v+'.webp" muted loop autoplay playsinline></video>'
+                : '<img class="med" src="primery/'+x.f+'.webp" alt="">';
+  el.innerHTML='<button class="x" data-act="zakryt">'+svg('x')+'</button>'+med
+    +'<div class="tx"><b>'+x.t+'</b><small>'+x.s+'</small>'+(x.c?'<em>'+esc(x.c)+'</em>':'')
+    +'<button class="btn a w" data-act="takoy">'+(x.vir?'Сделать с моим фото':'Сделать такой же')+'</button>'
+    +(x.vir?'<button class="btn b w" data-site="/virusnye">Все шаблоны на сайте</button>':'')+'</div>';
+  el.classList.add('on');
+}
+function zakrytProsmotr(){ var el=document.getElementById('pros'); if(!el.classList.contains('on')) return false; el.classList.remove('on'); el.innerHTML=''; prosI=-1; return true; }
 function byK(k){for(var i=0;i<R.length;i++) if(R[i].k===k) return R[i]}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function parse(s){try{return JSON.parse(s)||[]}catch(e){return []}}
@@ -224,6 +294,9 @@ var S = {
       +noteHtml()
       +'<div class="blok"><h2>Что создадим сегодня</h2><button data-go="sozdat">Все разделы →</button></div>'
       +'<div class="tiles">'+R.slice(0,6).map(tile).join('')+'</div>'
+      +'<div class="blok"><h2>Вирусные ролики</h2><button data-site="/virusnye">Все шаблоны →</button></div>'+lentaV(PV)
+      +'<div class="blok"><h2>Примеры картинок</h2><button data-r="kartinki">Создать →</button></div>'+lentaF(PF)
+      +'<div class="blok"><h2>Карточки WB и Ozon</h2><button data-r="rabota">Создать →</button></div>'+lentaF(PK,'f c')
       +(f.length?'<div class="blok"><h2>Последние работы</h2><button data-go="fayly">Мои файлы →</button></div><div class="works">'+f.slice(0,4).map(workFile).join('')+'</div>':'')
       +'<div class="foot">ARGEDA AI · приложение открывается и без интернета</div>';
   },
@@ -237,6 +310,7 @@ var S = {
     var chern=''; try{ chern = sessionStorage.getItem('ch-'+k)||''; }catch(x){}
     return '<button class="back" data-go="'+(prev||'glavnaya')+'">'+svg('nazad')+'Назад</button>'
       +'<div class="bnr">'+art(r.k)+'<span class="pod"><b>'+r.t+'</b><small>'+r.d+'</small></span></div>'
+      +primeryRazdela(r.k)
       +'<div class="uses">'+r.u.map(function(x){return '<span>'+x+'</span>'}).join('')+'</div>'
       +'<textarea id="prompt" placeholder="'+esc(r.ph)+'">'+esc(chern)+'</textarea>'
       +'<div class="hint">'+(st==='net'?'Сервер сейчас не отвечает: задание сохранится в телефоне и откроется в разделе, как только связь вернётся.':'Откроем раздел и вставим ваш текст — останется выбрать модель и нажать «Создать».')+'</div>'
@@ -291,8 +365,10 @@ function sostoyanie(s){
 
 document.addEventListener('input',function(e){ if(e.target.id==='prompt'&&curK) try{sessionStorage.setItem('ch-'+curK,e.target.value)}catch(x){} });
 document.addEventListener('click',function(e){
-  var t=e.target.closest('[data-go],[data-r],[data-site],[data-act],[data-z],[data-zd],[data-f],[data-fs],[data-kop]'); if(!t) return;
+  var t=e.target.closest('[data-pm],[data-go],[data-r],[data-site],[data-act],[data-z],[data-zd],[data-f],[data-fs],[data-kop]'); if(!t) return;
   var d=t.dataset;
+  if(d.pm!=null){ prosmotr(+d.pm); return; }
+  if(d.act!=='takoy' && t.closest('#pros')) zakrytProsmotr();
   if(d.go){ show(d.go); return; }
   if(d.r){ if(podel){ try{sessionStorage.setItem('ch-'+d.r,podel)}catch(x){} podel=null; } show('razdel',d.r); return; }
   if(d.site){ if(!K) return; if(st==='net'){ K.kopiya(d.site); retry(); return; } K.razdel(d.site,''); return; }
@@ -302,6 +378,8 @@ document.addEventListener('click',function(e){
   if(d.zd!=null){ K&&K.ubratZadanie(+d.zd); redraw(); return; }
   if(d.z!=null){ if(st==='net'){ toast('Отправится, когда сервер заработает'); retry(); return; } K&&K.otpravitZadanie(+d.z); return; }
   var a=d.act;
+  if(a==='zakryt'){ return; }
+  if(a==='takoy'){ var x=PALL[prosI]; zakrytProsmotr(); if(x){ try{sessionStorage.setItem('ch-'+x.k,x.ph)}catch(z){} show('razdel',x.k); } return; }
   if(a==='retry'){ retry(); return; }
   if(a==='nasayt'){ K&&K.otpustit(); return; }
   if(a==='otmena'){ podel=null; if(st==='ok'&&K){ K.otpustit(); } show('glavnaya'); return; }
@@ -323,7 +401,7 @@ document.addEventListener('click',function(e){
 function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povtorit(); }
 
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
-window.karkasNazad=function(){ if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
+window.karkasNazad=function(){ if(zakrytProsmotr()) return 'ok'; if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
 window.karkasEkran=function(o){ if(!o) return; if(o.t) podel=o.t; if(S[o.n]||o.n==='razdel') show(o.n, o.k||null); };
 sostoyanie(K ? K.sostoyanie() : 'proverka');
 var e0 = K && K.startEkran ? K.startEkran() : '';

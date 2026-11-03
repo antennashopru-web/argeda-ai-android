@@ -47,6 +47,7 @@ class Karkas {
         s.setAllowFileAccess(false);          // assets are still readable; nothing else on disk
         s.setAllowContentAccess(true);        // thumbnails of saved files (content://)
         s.setDomStorageEnabled(true);
+        s.setMediaPlaybackRequiresUserGesture(false);  // muted example clips loop on their own
         v.setBackgroundColor(0xFF0B0C0E);
         v.addJavascriptInterface(new Most(), "ArgedaKarkas");
         v.setWebViewClient(new WebViewClient() {

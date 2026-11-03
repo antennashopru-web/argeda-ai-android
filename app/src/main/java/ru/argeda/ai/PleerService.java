@@ -51,7 +51,7 @@ public class PleerService extends Service {
         session = new MediaSession(this, "ArgedaPleer");
         session.setCallback(new MediaSession.Callback() {
             @Override public void onPlay() { mirror("play", 0); }
-            @Override public void onPause() { mirror("pause", 0); }
+            @Override public void onPause() { pauza(); }
             @Override public void onStop() { mirror("pause", 0); stopAll(); }
             @Override public void onSeekTo(long pos) { mirror("seek", (int) pos); }
             @Override public void onSkipToNext() { mirror("next", 0); }
@@ -60,7 +60,14 @@ public class PleerService extends Service {
         session.setActive(true);
     }
 
-    private void mirror(String what, int ms) { if (ui != null) ui.pleerMirror(what, ms); }
+    private void mirror(String what, int ms) { if (ui != null) ui.pleerMirror(what, ms); else if (!"seek".equals(what)) stopAll(); }
+    /** Pause pressed outside the page: show it at once, do not wait for the page to answer. */
+    private void pauza() { mirror("pause", 0); if (ui != null) { playing = false; show(); } }
+    private final android.content.BroadcastReceiver shum = new android.content.BroadcastReceiver() {
+        @Override public void onReceive(Context c, Intent i) { if (playing) pauza(); } // headphones unplugged
+    };
+    private boolean shumZareg;
+    @Override public void onTaskRemoved(Intent root) { mirror("pause", 0); stopAll(); super.onTaskRemoved(root); }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -72,7 +79,7 @@ public class PleerService extends Service {
             playing = true; show();
         } else if (A_PAUSE.equals(a)) { posMs = intent.getIntExtra("pos", (int) posMs); playing = false; show(); }
         else if (A_SEEK.equals(a)) { posMs = intent.getIntExtra("pos", 0); show(); }
-        else if (A_TOGGLE.equals(a)) { mirror(playing ? "pause" : "play", 0); }
+        else if (A_TOGGLE.equals(a)) { if (playing) pauza(); else mirror("play", 0); }
         else if (A_STOP.equals(a)) { mirror("pause", 0); stopAll(); }
         else if (A_STOP_TIHO.equals(a)) stopAll();
         else if (A_NEXT.equals(a)) mirror("next", 0);
@@ -86,6 +93,8 @@ public class PleerService extends Service {
             if (wifi == null) { wifi = ((android.net.wifi.WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "argeda:pleer"); wifi.setReferenceCounted(false); }
             if (on) { wake.acquire(3 * 60 * 60 * 1000L); wifi.acquire(); }
             else { if (wake.isHeld()) wake.release(); if (wifi.isHeld()) wifi.release(); }
+            if (on && !shumZareg) { registerReceiver(shum, new android.content.IntentFilter(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)); shumZareg = true; }
+            else if (!on && shumZareg) { unregisterReceiver(shum); shumZareg = false; }
         } catch (Exception ignored) {}
     }
 
@@ -114,7 +123,7 @@ public class PleerService extends Service {
         Notification n = new Notification.Builder(this, CH)
                 .setSmallIcon(R.drawable.ic_nota)
                 .setContentTitle(title).setContentText("ARGEDA AI")
-                .setContentIntent(openPi).setOngoing(playing).setOnlyAlertOnce(true)
+                .setContentIntent(openPi).setDeleteIntent(pi(A_STOP_TIHO, 5)).setOngoing(playing).setOnlyAlertOnce(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .addAction(new Notification.Action.Builder(null, "Назад", pi(A_PREV, 3)).build())
                 .addAction(new Notification.Action.Builder(null, playing ? "Пауза" : "Играть", pi(A_TOGGLE, 1)).build())
@@ -130,7 +139,7 @@ public class PleerService extends Service {
         }
         h.removeCallbacks(otpustit);
         if (playing) zamki(true);
-        else h.postDelayed(otpustit, 3 * 60 * 1000L); // paused: after 3 min the notification stays, process may sleep
+        else h.post(otpustit); // paused: notification stays but can be swiped away, process may sleep
     }
 
     @Override

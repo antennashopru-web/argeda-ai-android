@@ -171,11 +171,14 @@ public class MainActivity extends Activity {
 
     /** Notification buttons -> page player, so the site UI stays in sync. */
     void pleerMirror(String what, int ms) {
-        if (karkas != null && karkas.pleerNash) {
-            runOnUiThread(() -> ((WebView) findViewById(R.id.offline)).evaluateJavascript("window.karkasPleer&&window.karkasPleer(" + org.json.JSONObject.quote(what) + "," + ms + ")", null));
-            return;
-        }
-        runOnUiThread(() -> web.evaluateJavascript("window.__argedaPleerMirror&&window.__argedaPleerMirror(" + org.json.JSONObject.quote(what) + "," + ms + ")", null));
+        // send to both pages: whichever one is playing reacts; on pause/stop also silence every media element
+        String q = org.json.JSONObject.quote(what);
+        boolean stop = "pause".equals(what) || "stop".equals(what);
+        String tiho = stop ? "try{document.querySelectorAll('audio,video').forEach(function(m){m.pause()})}catch(e){}" : "";
+        runOnUiThread(() -> {
+            try { ((WebView) findViewById(R.id.offline)).evaluateJavascript("window.karkasPleer&&window.karkasPleer(" + q + "," + ms + ");" + tiho, null); } catch (Exception ignored) {}
+            try { web.evaluateJavascript("window.__argedaPleerMirror&&window.__argedaPleerMirror(" + q + "," + ms + ");" + tiho, null); } catch (Exception ignored) {}
+        });
     }
     private static final int RC_PERM_STORAGE = 4;
 
@@ -240,7 +243,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState); PleerService.ui = this;
         setContentView(R.layout.activity_main);
         web = findViewById(R.id.web);
         progress = findViewById(R.id.progress);
@@ -435,7 +438,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/4.0");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/4.1");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -870,6 +873,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (PleerService.ui == this) PleerService.ui = null;
+        // app closed: music stops with it
+        PleerService.send(this, PleerService.A_STOP_TIHO, null, 0, 0);
+        try { WebView off = findViewById(R.id.offline); off.evaluateJavascript("window.karkasPleer&&window.karkasPleer('pause',0)", null); off.destroy(); } catch (Exception ignored) {}
         try { unregisterReceiver(downloadDone); } catch (Exception ignored) {}
         try { if (setVernulas != null) ((android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE)).unregisterNetworkCallback(setVernulas); } catch (Exception ignored) {}
         closePopup(); web.destroy(); super.onDestroy();

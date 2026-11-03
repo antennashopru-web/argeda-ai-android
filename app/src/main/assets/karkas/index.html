@@ -518,7 +518,7 @@ plA.addEventListener('stalled',function(){ clearTimeout(plZhdT); plZhdT=setTimeo
 plA.addEventListener('play',function(){ clearTimeout(plPauzaT); plMost('play'); });
 plA.addEventListener('pause',function(){ clearTimeout(plPauzaT); plPauzaT=setTimeout(function(){ if(plA.paused) plMost('pause'); },2500); });
 plA.addEventListener('seeked',function(){ if(!plA.paused) plMost('seek'); });
-window.karkasPleer=function(w,ms){ var t=plTek(); if(!t) return;
+window.karkasPleer=function(w,ms){ if(w==='pause'||w==='stop'){ plA.pause(); plRis(); return; } var t=plTek(); if(!t) return;
   if(w==='play') plA.play().catch(function(){}); else if(w==='pause') plA.pause();
   else if(w==='seek'){ try{ plA.currentTime=ms/1000; }catch(e){} } else if(w==='next') plSled(1); else if(w==='prev'){ if(plA.currentTime>3) plA.currentTime=0; else plSled(-1); }
   plRis(); };

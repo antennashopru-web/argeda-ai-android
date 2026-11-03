@@ -19,7 +19,8 @@ import android.os.IBinder;
  */
 public class PleerService extends Service {
     static final String A_PLAY = "ru.argeda.ai.PLAY", A_PAUSE = "ru.argeda.ai.PAUSE", A_SEEK = "ru.argeda.ai.SEEK",
-            A_STOP = "ru.argeda.ai.STOP", A_TOGGLE = "ru.argeda.ai.TOGGLE";
+            A_STOP = "ru.argeda.ai.STOP", A_TOGGLE = "ru.argeda.ai.TOGGLE",
+            A_NEXT = "ru.argeda.ai.NEXT", A_PREV = "ru.argeda.ai.PREV", A_STOP_TIHO = "ru.argeda.ai.STOP_TIHO";
     static final String CH = "pleer";
     static final int NOTIF_ID = 7;
 
@@ -29,6 +30,12 @@ public class PleerService extends Service {
     private MediaSession session;
     private String title = "ARGEDA AI";
     private long posMs, durMs;
+    private android.os.PowerManager.WakeLock wake;
+    private android.net.wifi.WifiManager.WifiLock wifi;
+    private final android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
+    /** Paused for long: let the process sleep. A short pause (next track, buffering) keeps the service in the foreground,
+     *  because Android 12+ forbids going back to the foreground from the background. */
+    private final Runnable otpustit = () -> { if (!playing) { zamki(false); stopForeground(STOP_FOREGROUND_DETACH); } };
 
     @Override public IBinder onBind(Intent i) { return null; }
 
@@ -47,6 +54,8 @@ public class PleerService extends Service {
             @Override public void onPause() { mirror("pause", 0); }
             @Override public void onStop() { mirror("pause", 0); stopAll(); }
             @Override public void onSeekTo(long pos) { mirror("seek", (int) pos); }
+            @Override public void onSkipToNext() { mirror("next", 0); }
+            @Override public void onSkipToPrevious() { mirror("prev", 0); }
         });
         session.setActive(true);
     }
@@ -65,11 +74,23 @@ public class PleerService extends Service {
         else if (A_SEEK.equals(a)) { posMs = intent.getIntExtra("pos", 0); show(); }
         else if (A_TOGGLE.equals(a)) { mirror(playing ? "pause" : "play", 0); }
         else if (A_STOP.equals(a)) { mirror("pause", 0); stopAll(); }
+        else if (A_STOP_TIHO.equals(a)) stopAll();
+        else if (A_NEXT.equals(a)) mirror("next", 0);
+        else if (A_PREV.equals(a)) mirror("prev", 0);
         return START_NOT_STICKY;
     }
 
+    private void zamki(boolean on) {
+        try {
+            if (wake == null) { wake = ((android.os.PowerManager) getSystemService(POWER_SERVICE)).newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "argeda:pleer"); wake.setReferenceCounted(false); }
+            if (wifi == null) { wifi = ((android.net.wifi.WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE)).createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "argeda:pleer"); wifi.setReferenceCounted(false); }
+            if (on) { wake.acquire(3 * 60 * 60 * 1000L); wifi.acquire(); }
+            else { if (wake.isHeld()) wake.release(); if (wifi.isHeld()) wifi.release(); }
+        } catch (Exception ignored) {}
+    }
+
     private void stopAll() {
-        playing = false;
+        playing = false; h.removeCallbacks(otpustit); zamki(false);
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
@@ -85,7 +106,8 @@ public class PleerService extends Service {
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, "ARGEDA AI")
                 .putLong(MediaMetadata.METADATA_KEY_DURATION, durMs).build());
         session.setPlaybackState(new PlaybackState.Builder()
-                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SEEK_TO | PlaybackState.ACTION_STOP)
+                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SEEK_TO | PlaybackState.ACTION_STOP
+                        | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS)
                 .setState(playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED, posMs, playing ? 1f : 0f).build());
         Intent open = new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent openPi = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -94,18 +116,26 @@ public class PleerService extends Service {
                 .setContentTitle(title).setContentText("ARGEDA AI")
                 .setContentIntent(openPi).setOngoing(playing).setOnlyAlertOnce(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .addAction(new Notification.Action.Builder(null, "Назад", pi(A_PREV, 3)).build())
                 .addAction(new Notification.Action.Builder(null, playing ? "Пауза" : "Играть", pi(A_TOGGLE, 1)).build())
+                .addAction(new Notification.Action.Builder(null, "Дальше", pi(A_NEXT, 4)).build())
                 .addAction(new Notification.Action.Builder(null, "Закрыть", pi(A_STOP, 2)).build())
-                .setStyle(new Notification.MediaStyle().setMediaSession(session.getSessionToken()).setShowActionsInCompactView(0, 1))
+                .setStyle(new Notification.MediaStyle().setMediaSession(session.getSessionToken()).setShowActionsInCompactView(0, 1, 2))
                 .build();
-        if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIF_ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-        else startForeground(NOTIF_ID, n);
-        if (!playing) stopForeground(STOP_FOREGROUND_DETACH); // paused: notification stays, process may sleep
+        try {
+            if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIF_ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            else startForeground(NOTIF_ID, n);
+        } catch (Exception e) { // not allowed from the background: at least update the notification
+            try { getSystemService(NotificationManager.class).notify(NOTIF_ID, n); } catch (Exception ignored) {}
+        }
+        h.removeCallbacks(otpustit);
+        if (playing) zamki(true);
+        else h.postDelayed(otpustit, 3 * 60 * 1000L); // paused: after 3 min the notification stays, process may sleep
     }
 
     @Override
     public void onDestroy() {
-        playing = false;
+        playing = false; h.removeCallbacks(otpustit); zamki(false);
         if (session != null) { session.setActive(false); session.release(); }
         super.onDestroy();
     }

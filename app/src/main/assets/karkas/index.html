@@ -483,7 +483,7 @@ var IKP={play:'<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5
  save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
  tekst:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 11h16M4 16h10"/></svg>'};
 var PL={q:[],i:-1,shuf:false,rep:0,spd:1,tekst:false,polnyy:false};
-var plA=new Audio(); plA.preload='metadata';
+var plA=new Audio(); plA.preload='auto';
 window.__PL=function(){ return {PL:PL,a:plA,MZ:MZ}; };
 function plTreki(x){ if(x.tip!=='muzyka'||x.st!=='gotovo') return [];
   var t=(x.treki&&x.treki.length)?x.treki:(x.urls||[]).filter(function(u){return /\.(mp3|wav|m4a)(\?|$)/i.test(u)}).map(function(u){return {url:u}});
@@ -500,14 +500,27 @@ function plIgrat(url){
   var t=plTek(); if(t&&t.url===url){ plA.paused?plA.play():plA.pause(); return; }
   PL.q=v; PL.i=i; plZapusk();
 }
-function plZapusk(){ var t=plTek(); if(!t) return; plA.src=t.url; plA.playbackRate=PL.spd; plA.play().catch(function(){}); plMedia(); plRis(); }
+function plZapusk(){ var t=plTek(); if(!t) return; plOsh=0; plA.src=t.url; plA.playbackRate=PL.spd; plA.play().catch(function(){}); plMedia(); plRis(); }
 function plSled(dir){ var n=PL.q.length; if(!n) return;
   if(PL.shuf&&n>1){ var j; do{ j=Math.floor(Math.random()*n); }while(j===PL.i); PL.i=j; }
   else { PL.i+=dir; if(PL.i>=n){ if(PL.rep===1) PL.i=0; else { PL.i=n-1; plA.pause(); return; } } if(PL.i<0) PL.i=0; }
   plZapusk(); }
 plA.addEventListener('ended',function(){ if(PL.rep===2){ plA.currentTime=0; plA.play(); } else plSled(1); });
 plA.addEventListener('play',plRis); plA.addEventListener('pause',plRis); plA.addEventListener('loadedmetadata',plRis);
-plA.addEventListener('error',function(){ if(plTek()) toast('Трек не загрузился — ссылка могла устареть, сохраните песни в телефон'); });
+var plOsh=0, plPauzaT=0, plZhdT=0;
+function plMost(w){ if(!K||!K.pleer) return; try{ var t=plTek(); K.pleer(w,t?t.title:'',Math.round((plA.currentTime||0)*1000),Math.round((plA.duration||(t&&t.dur)||0)*1000)); }catch(e){} }
+function plVosst(){ var t=plTek(); if(!t) return false; var pos=plA.currentTime||0; plA.src=t.url; plA.addEventListener('loadedmetadata',function f(){ plA.removeEventListener('loadedmetadata',f); try{ if(pos>1) plA.currentTime=pos; }catch(e){} },{once:true}); plA.playbackRate=PL.spd; plA.play().catch(function(){}); return true; }
+plA.addEventListener('error',function(){ if(!plTek()) return; if(plOsh<3){ plOsh++; setTimeout(plVosst,800*plOsh); return; } toast('Трек не загрузился — ссылка могла устареть, сохраните песни в телефон'); });
+plA.addEventListener('playing',function(){ plOsh=0; clearTimeout(plZhdT); });
+plA.addEventListener('waiting',function(){ clearTimeout(plZhdT); plZhdT=setTimeout(function(){ if(!plA.paused&&plA.readyState<3) plVosst(); },12000); });
+plA.addEventListener('stalled',function(){ clearTimeout(plZhdT); plZhdT=setTimeout(function(){ if(!plA.paused&&plA.readyState<3) plVosst(); },12000); });
+plA.addEventListener('play',function(){ clearTimeout(plPauzaT); plMost('play'); });
+plA.addEventListener('pause',function(){ clearTimeout(plPauzaT); plPauzaT=setTimeout(function(){ if(plA.paused) plMost('pause'); },2500); });
+plA.addEventListener('seeked',function(){ if(!plA.paused) plMost('seek'); });
+window.karkasPleer=function(w,ms){ var t=plTek(); if(!t) return;
+  if(w==='play') plA.play().catch(function(){}); else if(w==='pause') plA.pause();
+  else if(w==='seek'){ try{ plA.currentTime=ms/1000; }catch(e){} } else if(w==='next') plSled(1); else if(w==='prev'){ if(plA.currentTime>3) plA.currentTime=0; else plSled(-1); }
+  plRis(); };
 plA.addEventListener('timeupdate',plVremyaRis);
 function plMedia(){ var t=plTek(); if(!t||!('mediaSession' in navigator)) return; try{
   navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:'ARGEDA AI',artwork:t.img?[{src:t.img,sizes:'512x512',type:'image/jpeg'}]:[]});

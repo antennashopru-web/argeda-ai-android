@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
         @android.webkit.JavascriptInterface
         public void pleerPlay(String url, String title, int posMs, int durMs) {
             if (!onOurHost()) return;
-            runOnUiThread(() -> { askNotifications(); PleerService.send(MainActivity.this, PleerService.A_PLAY, title, posMs, durMs); });
+            runOnUiThread(() -> { if (karkas != null) karkas.pleerNash = false; askNotifications(); PleerService.send(MainActivity.this, PleerService.A_PLAY, title, posMs, durMs); });
         }
         @android.webkit.JavascriptInterface
         public void pleerPause(int posMs) { if (onOurHost()) runOnUiThread(() -> PleerService.send(MainActivity.this, PleerService.A_PAUSE, null, posMs, 0)); }
@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
     private Object[] pendingSave;
     private boolean notifAsked;
 
-    private void askNotifications() {
+    void askNotifications() {
         if (Build.VERSION.SDK_INT >= 33 && !notifAsked && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notifAsked = true;
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 5);
@@ -171,6 +171,10 @@ public class MainActivity extends Activity {
 
     /** Notification buttons -> page player, so the site UI stays in sync. */
     void pleerMirror(String what, int ms) {
+        if (karkas != null && karkas.pleerNash) {
+            runOnUiThread(() -> ((WebView) findViewById(R.id.offline)).evaluateJavascript("window.karkasPleer&&window.karkasPleer(" + org.json.JSONObject.quote(what) + "," + ms + ")", null));
+            return;
+        }
         runOnUiThread(() -> web.evaluateJavascript("window.__argedaPleerMirror&&window.__argedaPleerMirror(" + org.json.JSONObject.quote(what) + "," + ms + ")", null));
     }
     private static final int RC_PERM_STORAGE = 4;
@@ -426,7 +430,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.8");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.9");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);

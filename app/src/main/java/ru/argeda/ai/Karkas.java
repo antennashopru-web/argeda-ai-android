@@ -65,7 +65,11 @@ class Karkas {
         view.setVisibility(View.VISIBLE);
     }
 
-    void skryt() { if (zakrep) { sost = "ok"; js("window.karkasObnovit&&window.karkasObnovit('ok')"); return; } view.setVisibility(View.GONE); }
+    /** The shell's own music player owns the notification (not the site's). */
+    volatile boolean pleerNash;
+    boolean igraet() { return pleerNash && PleerService.playing; }
+
+    void skryt() { if (zakrep || igraet()) { sost = "ok"; js("window.karkasObnovit&&window.karkasObnovit('ok')"); return; } view.setVisibility(View.GONE); }
     void skrytVsegda() { zakrep = false; view.setVisibility(View.GONE); }
 
     /** Held open on purpose (text shared into the app): the user picks a section first, even if the site is up. */
@@ -213,6 +217,17 @@ class Karkas {
 
         /** Try the site again; the shell hides itself once the page has loaded. */
         @JavascriptInterface public void povtorit() { a.runOnUiThread(a::povtoritSayt); }
+
+        /** Music of the shell: keeps the app alive in the background and mirrors to the notification. */
+        @JavascriptInterface public void pleer(String what, String title, int posMs, int durMs) {
+            a.runOnUiThread(() -> {
+                if ("play".equals(what)) { pleerNash = true; a.askNotifications(); PleerService.send(a, PleerService.A_PLAY, title, posMs, durMs); }
+                else if (!pleerNash) return;
+                else if ("pause".equals(what)) PleerService.send(a, PleerService.A_PAUSE, null, posMs, 0);
+                else if ("seek".equals(what)) PleerService.send(a, PleerService.A_SEEK, null, posMs, 0);
+                else if ("stop".equals(what)) { PleerService.send(a, PleerService.A_STOP_TIHO, null, 0, 0); pleerNash = false; }
+            });
+        }
 
         @JavascriptInterface public String sostoyanie() { return sost; }
         @JavascriptInterface public String startEkran() { String e = startEkran; startEkran = null; return e == null ? "" : e; }

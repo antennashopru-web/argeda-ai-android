@@ -222,7 +222,12 @@ details[open] summary{margin-bottom:12px}
 .plq{background:var(--pov1);border:1px solid var(--liniya);border-radius:20px;padding:6px 14px 10px}.plq h3{margin:10px 0 6px}.plr{width:100%;padding:8px 0;border-top:1px solid var(--liniya)}
 .trk{border:1px solid var(--liniya);border-radius:16px;padding:10px;margin:8px 0;background:var(--pov1)}.trk.on{border-color:#ff9a3c}
 .trp{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ffb35c,#ff6a4d);color:#1a1206;margin-left:auto}.trp svg{width:20px;height:20px}
-.trd{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.trd button{font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:11px;background:var(--knopka);color:var(--tekst);border:0}
+.trd{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.trd button.izb{color:#ff8a3c}.trd button{font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:11px;background:var(--knopka);color:var(--tekst);border:0}
+.zv{border:1px solid var(--liniya);border-radius:18px;padding:14px;background:var(--pov1);margin:12px 0}.zvh b{display:block;font-size:17px}.zvh small{display:block;color:var(--tekst3);font-size:12.5px;margin:2px 0 10px}
+.zvt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.zvt::-webkit-scrollbar{display:none}.zvt button{flex:1 1 auto;padding:8px 14px;border-radius:12px;border:1px solid var(--liniya);background:var(--knopka);font-weight:700;font-size:13px}.zvt button.on{border-color:#ff9a3c;background:rgba(255,154,60,.16)}
+.zvq{width:100%;box-sizing:border-box;background:var(--fon);color:var(--tekst);border:1px solid var(--liniya);border-radius:12px;padding:10px 12px;font:400 14px Onest,sans-serif;margin-bottom:10px;outline:none}
+.zvg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.zvg button{text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--liniya);background:var(--fon);color:var(--tekst)}.zvg button b{display:block;font-size:14px}.zvg button small{display:block;color:var(--tekst3);font-size:12px;line-height:1.3;margin-top:2px}.zvg button.on{border-color:#ff9a3c;box-shadow:0 0 0 1px #ff9a3c inset;background:rgba(255,154,60,.1)}
+.zvs{margin-top:10px;font-size:13px;color:var(--tekst2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}.zvs span{background:rgba(255,154,60,.16);color:var(--tekst);border-radius:10px;padding:4px 4px 4px 10px;font-weight:600}.zvs button{padding:0 6px;font-size:15px;color:var(--tekst3)}
 </style>
 </head>
 <body>
@@ -546,7 +551,7 @@ function plTrekHtml(x){
   var t=plTek();
   return tr.map(function(y){ var on=t&&t.url===y.url, a=' data-tid="'+esc(x.id)+'" data-aid="'+esc(y.audioId)+'" data-dur="'+(y.dur||0)+'" data-nm="'+esc(y.title)+'"';
     return '<div class="trk'+(on?' on':'')+'" data-u="'+esc(y.url)+'"><button class="trm" data-act="pl-igrat" data-u="'+esc(y.url)+'">'+plObl(y,'plo')+'<span class="plt"><b>'+esc(y.title)+'</b><small>Вариант '+y.n+(y.dur?' · '+plVremya(y.dur):'')+'</small></span><span class="trp">'+(on&&!plA.paused?IKP.pause:IKP.play)+'</span></button>'
-      +'<div class="trd"><button data-act="pz-skachat" data-u="'+esc(y.url)+'" data-m="audio/mpeg">Сохранить</button>'+(y.audioId?'<button data-act="mz-ist" data-op="prodlit"'+a+'>Продлить</button><button data-act="mz-ist" data-op="kaver"'+a+'>Кавер</button>':'')+'</div></div>'; }).join('');
+      +'<div class="trd"><button data-act="mz-izb" data-u="'+esc(y.url)+'" class="'+((MZ.izb||[]).indexOf(y.url)>=0?'izb':'')+'">'+((MZ.izb||[]).indexOf(y.url)>=0?'★':'☆')+'</button><button data-act="pz-skachat" data-u="'+esc(y.url)+'" data-m="audio/mpeg">Сохранить</button>'+(y.audioId?'<button data-act="mz-ist" data-op="prodlit"'+a+'>Продлить</button><button data-act="mz-ist" data-op="kaver"'+a+'>Кавер</button>':'')+'</div></div>'; }).join('');
 }
 function plKlik(d,el){
   var a=d.act, t=plTek();
@@ -707,20 +712,54 @@ function mzGolosChips(){ return mzChips('golos',[['','Авто'],['m','Мужс�
 function mzStilAvto(){ var s=[MZ_ZHEN[MZ.zhanr]||'',MZ_NEN[MZ.nastr]||''].filter(Boolean).join(', '); if(MZ.yazyk==='Русский') s+=(s?', ':'')+'russian vocals'; else if(MZ.yazyk==='Армянский') s+=(s?', ':'')+'armenian vocals'; return s; }
 function mzMoiTeksty(){
   var a=mzTeksty();
-  return '<details class="mzd"'+(MZ.otkrytTeksty?' open':'')+'><summary>Мои тексты'+(a.length?' ('+a.length+')':'')+'</summary>'
+  return '<details class="mzd" data-dk="otkrytTeksty"'+(MZ.otkrytTeksty?' open':'')+'><summary>Мои тексты'+(a.length?' ('+a.length+')':'')+'</summary>'
     +(a.length?a.map(function(x){ return '<div class="mzt"><button class="mzt-o" data-act="mz-tekst" data-id="'+x.id+'"><b>'+esc(x.nazv||'Без названия')+'</b><small>'+kogda(x.t)+(x.stil?' · '+esc(x.stil.slice(0,40)):'')+'</small></button><button class="mzt-x" data-act="mz-tdel" data-id="'+x.id+'">×</button></div>'; }).join('')
       :'<div class="empty" style="padding:10px 0">Сохранённые тексты песен появятся здесь. Хранятся в телефоне.</div>')
     +'</details>';
 }
+/* --- Ваше звучание (как на сайте): Жанры / Песни / Кино / Вокал / Свой стиль --- */
+var ZV={
+ zhanry:[['Поп','Яркий, запоминающийся припев','modern pop, catchy chorus, bright synths, punchy drums'],['Русский поп','Как на радио','russian pop, radio-friendly, emotional chorus, polished production'],['Рок','Гитары и энергия','rock, distorted electric guitars, live drums, powerful'],['Поп-рок','Гитары и мелодия','pop rock, electric guitars, anthemic chorus'],['Рэп','Бит и читка','hip-hop, rap, hard 808 bass, trap hi-hats'],['Шансон','Душевно, с баяном','russian chanson, accordion, acoustic guitar, storytelling'],['Джаз','Саксофон и контрабас','jazz, saxophone, upright bass, brushed drums, smoky'],['Электроника','Для танцпола','electronic dance, edm, four-on-the-floor, big drop'],['Хаус','Ровный танцевальный ритм','deep house, groovy bassline, warm pads'],['Акустика','Гитара и голос','acoustic, fingerpicked guitar, intimate, warm'],['Баллада','Фортепиано и чувства','piano ballad, emotional, strings, slow tempo'],['R&B','Мягкий грув','r&b, smooth groove, soulful, lush harmonies'],['Лоу-фай','Спокойно, для фона','lo-fi hip hop, chill, vinyl crackle, mellow'],['Регги','Солнечно и расслабленно','reggae, offbeat guitar skank, relaxed groove'],['Метал','Тяжело и мощно','heavy metal, aggressive riffs, double kick drums'],['Народная','Русские мотивы','russian folk, balalaika, accordion, choir'],['Кантри','Банджо и дорога','country, banjo, acoustic guitar, warm storytelling'],['Диско','Ретро-танцы','disco, funky bass, strings, four-on-the-floor, 70s']],
+ pesni:[['День рождения','Весело, с хлопками','happy birthday song, upbeat, festive, handclaps, celebration'],['Свадьба','Нежно и торжественно','wedding song, romantic, tender, strings, piano'],['О любви','Романтика','romantic love song, warm, heartfelt, gentle'],['Для мамы','Тепло и трогательно','touching song for mother, warm, gentle piano, heartfelt'],['Для друга','Дружеский драйв','friendship anthem, feel-good, upbeat, sing-along'],['Детская','Игриво и просто','children song, playful, simple melody, bright, cheerful'],['Колыбельная','Тихо, на сон','lullaby, soft, calm, music box, gentle'],['Новый год','Праздник и снег','new year holiday song, festive, bells, joyful'],['Гимн команды','Мощно, всем хором','team anthem, epic, stadium chant, powerful drums'],['Грустная','Расставание','sad breakup song, melancholic, emotional, slow'],['Поздравление','Коротко и ярко','congratulation song, cheerful, bright, short'],['Реклама','Джингл для бизнеса','advertising jingle, catchy, upbeat, short hook']],
+ kino:[['Эпик','Как в трейлере','epic cinematic trailer, orchestra, choir, huge drums'],['Драма','Напряжённо и глубоко','cinematic drama, emotional strings, piano, tension'],['Приключения','Вперёд к цели','adventure film score, heroic brass, orchestral'],['Триллер','Тревога и пульс','thriller score, dark, pulsing synths, suspense'],['Романтика','Как в мелодраме','romantic film score, lush strings, tender piano'],['Фэнтези','Сказочный мир','fantasy film score, magical, celtic, choir'],['Нуар','Ночной город','film noir, smoky jazz, muted trumpet'],['Мультфильм','Задорно','cartoon score, playful, quirky, orchestral'],['Космос','Простор и синтезаторы','space ambient, synth pads, cinematic, vast']],
+ vokal:[['Женский тёплый','Мягкий и близкий','warm female vocals, intimate, soft'],['Женский мощный','С силой и диапазоном','powerful female vocals, belting, wide range'],['Мужской тёплый','Бархатный баритон','warm male baritone vocals, smooth'],['Мужской с хрипотцой','Как в роке','raspy male vocals, gritty, rock'],['Дуэт','Он и она','male and female duet vocals, harmonies'],['Хор','Много голосов','choir vocals, layered harmonies, grand'],['Детский голос','Звонко','child vocals, bright, innocent'],['Шёпот','Тихо и близко','whispered vocals, breathy, intimate']]
+};
+var ZVT=[['zhanry','Жанры'],['pesni','Песни'],['kino','Кино'],['vokal','Вокал'],['svoy','Свой стиль']];
+function zvVybrano(){ return MZ.zvSel||[]; }
+function zvStil(){ if(MZ.zvTab==='svoy'&&(MZ.stil||'').trim()) return MZ.stil.trim(); var s=zvVybrano().map(function(x){return x.s}).join(', '); return s; }
+function zvBlok(){
+  var tab=MZ.zvTab||'zhanry', q=(MZ.zvQ||'').toLowerCase(), sel=zvVybrano();
+  var h='<div class="zv"><div class="zvh"><b>Ваше звучание</b><small>Выберите жанр, повод, кино-настроение и голос — можно несколько. Или опишите свой стиль.</small></div>'
+    +'<div class="zvt">'+ZVT.map(function(t){return '<button data-act="zv-tab" data-v="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>';
+  if(tab==='svoy'){
+    h+='<textarea data-mz="stil" style="min-height:80px" placeholder="Например: тёплый женский вокал, гитара, лёгкий поп, 100 bpm">'+esc(MZ.stil||'')+'</textarea><small class="pd">Пишите по-русски или по-английски: жанр, инструменты, настроение, темп.</small>';
+  } else {
+    h+='<input type="text" class="zvq" data-zvq="1" placeholder="Найти название или настроение" value="'+esc(MZ.zvQ||'')+'">';
+    var all=[]; (q?['zhanry','pesni','kino','vokal']:[tab]).forEach(function(k){ ZV[k].forEach(function(x,i){ if(!q||(x[0]+' '+x[1]+' '+x[2]).toLowerCase().indexOf(q)>=0) all.push({k:k,i:i,n:x[0],d:x[1],s:x[2]}); }); });
+    h+='<div class="zvg">'+(all.length?all.map(function(x){ var on=sel.some(function(y){return y.id===x.k+x.i}); return '<button data-act="zv-v" data-k="'+x.k+'" data-i="'+x.i+'" class="'+(on?'on':'')+'"><b>'+esc(x.n)+'</b><small>'+esc(x.d)+'</small></button>'; }).join(''):'<div class="empty">Ничего не нашлось — попробуйте «Свой стиль».</div>')+'</div>';
+  }
+  if(sel.length) h+='<div class="zvs">Выбрано: '+sel.map(function(x){return '<span>'+esc(x.n)+' <button data-act="zv-x" data-id="'+x.id+'">×</button></span>'}).join('')+'</div>';
+  return h+'</div>';
+}
+function zvKlik(d){
+  if(d.act==='zv-tab'){ MZ.zvTab=d.v; MZ.zvQ=''; mzSohr(); redraw(); return true; }
+  if(d.act==='zv-v'){ var x=ZV[d.k][+d.i], id=d.k+d.i, sel=zvVybrano().slice(), j=-1; sel.forEach(function(y,n){ if(y.id===id) j=n; });
+    if(j>=0) sel.splice(j,1); else { if(d.k==='vokal') sel=sel.filter(function(y){return y.id.indexOf('vokal')!==0}); sel.push({id:id,n:x[0],s:x[2]}); if(sel.length>4) sel.shift(); }
+    MZ.zvSel=sel; if(MZ.zvTab==='svoy') MZ.zvTab='zhanry'; mzSohr(); redraw(); return true; }
+  if(d.act==='zv-x'){ MZ.zvSel=zvVybrano().filter(function(y){return y.id!==d.id}); mzSohr(); redraw(); return true; }
+  return false;
+}
+document.addEventListener('input',function(e){ var t=e.target; if(t.dataset&&t.dataset.fq){ MZ.fQ=t.value; var ps=t.selectionStart; mzSohr(); redraw(); var m=document.querySelector('[data-fq]'); if(m){ m.focus(); try{m.setSelectionRange(ps,ps)}catch(x){} } return; } if(t.dataset&&t.dataset.zvq){ MZ.zvQ=t.value; var pos=t.selectionStart; redraw(); var n=document.querySelector('[data-zvq]'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos)}catch(x){} } } });
+var MZ_IDEI=['День рождения','О любви','О себе','Для мамы','Свадьба','Для друга','Детям','Про город'];
+
 function mzZvuk(knopka){
-  return '<label class="pl">Звучание (стиль)</label><textarea data-mz="stil" style="min-height:70px" placeholder="Например: весёлый поп, гитара, женский вокал">'+esc(MZ.stil||mzStilAvto())+'</textarea>'
-    +'<small class="pd">Можно оставить как есть — подобрано по жанру и настроению.</small>'
-    +'<label class="pl">Голос</label>'+mzGolosChips()
+  return zvBlok()
+    +'<label class="pl">Кто поёт</label>'+mzGolosChips()
     +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
     +'<button class="btn a w" data-act="mz-pesnya">'+knopka+'</button><div class="hint" style="margin-top:6px">Будет два варианта песни. Готовые появятся ниже, в «Моей музыке».</div>';
 }
 function mzZhanrNastr(otkryt){
-  return '<details class="mzd"'+(otkryt?' open':'')+'><summary>Язык, жанр и настроение</summary>'
+  return '<details class="mzd" data-dk="otkrytZhanr"'+((MZ.otkrytZhanr!=null?MZ.otkrytZhanr:otkryt)?' open':'')+'><summary>Язык, жанр и настроение</summary>'
     +'<label class="pl">Язык</label>'+mzChips('yazyk',MZ_YZ)+'<label class="pl">Жанр</label>'+mzChips('zhanr',MZ_ZH)+'<label class="pl">Настроение</label>'+mzChips('nastr',MZ_NS)+'</details>';
 }
 function muzykaHtml(){
@@ -730,7 +769,8 @@ function muzykaHtml(){
     h+='<div class="mzs">'+[[1,'Идея'],[2,'Текст'],[3,'Звучание']].map(function(s){ var dost=s[0]===1||(s[0]>=2&&MZ.tekst); return '<button data-act="mz-shag" data-v="'+s[0]+'" class="'+(MZ.shag===s[0]?'on':'')+(dost?'':' off')+'"><i>'+s[0]+'</i>'+s[1]+'</button>'; }).join('')+'</div>';
     if(MZ.shag===1){
       h+=mzMoiTeksty()+'<h3>О чём споём?</h3><label class="pl">О чём песня</label><textarea data-mz="ideya" style="min-height:110px" placeholder="Кому посвящена песня? Какие события, имена или чувства важно упомянуть?">'+esc(MZ.ideya)+'</textarea>'
-        +mzZhanrNastr(true)
+        +'<div class="chips mzc">'+MZ_IDEI.map(function(v){return '<button data-act="mz-ideya" data-v="'+v+'">'+v+'</button>'}).join('')+'</div>'
+        +mzZhanrNastr(false)
         +'<button class="btn a w" data-act="mz-sochinit"'+(mzZhdu?' disabled':'')+'>'+(mzZhdu?'Сочиняю текст…':'Сочинить текст')+'</button>'
         +'<div class="hint" style="margin-top:6px">Сначала ИИ напишет слова — вы сможете их поправить, потом выберете звучание.</div>';
     } else if(MZ.shag===2){
@@ -753,12 +793,18 @@ function muzykaHtml(){
   } else {
     h+='<label class="pl">Какая музыка нужна</label><textarea data-mz="minus" style="min-height:100px" placeholder="Например: фон для ролика о путешествии, лёгкая гитара, без слов">'+esc(MZ.minus)+'</textarea>'
       +'<label class="pl">Название</label><input type="text" data-mz="mNazv" maxlength="80" value="'+esc(MZ.mNazv||'')+'" placeholder="Минусовка">'
-      +'<label class="pl">Жанр</label>'+mzChips('zhanr',MZ_ZH)+'<label class="pl">Настроение</label>'+mzChips('nastr',MZ_NS)
+      +zvBlok()
       +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
       +'<button class="btn a w" data-act="mz-pesnya">Создать минусовку</button><div class="hint" style="margin-top:6px">Только музыка, без пения. Два варианта.</div>';
   }
-  var z=pzList().filter(function(x){return x.tip==='muzyka'}).reverse();
-  h+='<h3 id="mz-moya">Моя музыка</h3>'+(z.length?z.slice(0,12).map(mzKartaTrekov).join(''):'<div class="empty">Здесь будут ваши песни.</div>');
+  var z=pzList().filter(function(x){return x.tip==='muzyka'}).reverse(), vse=z.length, fq=(MZ.fQ||'').toLowerCase(), ff=MZ.fF||'vse', izb=MZ.izb||[];
+  z=z.filter(function(x){ var minus=/^Минусовка/.test(x.nazv||''); if(ff==='pesni'&&minus) return false; if(ff==='minus'&&!minus) return false;
+    if(ff==='izb'&&!plTreki(x).some(function(t){return izb.indexOf(t.url)>=0})) return false;
+    if(fq){ var tx=((x.nazv||'')+' '+(x.prompt||'')+' '+(x.treki||[]).map(function(t){return (t.title||'')+' '+(t.tekst||'')+' '+(t.stil||'')}).join(' ')).toLowerCase(); if(tx.indexOf(fq)<0) return false; }
+    return true; });
+  h+='<h3 id="mz-moya">Моя музыка</h3>'+(vse?'<input type="text" class="zvq" data-fq="1" placeholder="Название, слова или стиль" value="'+esc(MZ.fQ||'')+'">'
+    +'<div class="chips mzc">'+[['vse','Все'],['pesni','Песни'],['minus','Минусы'],['izb','★ Избранное']].map(function(t){return '<button data-act="mz-f" data-v="'+t[0]+'" class="'+(ff===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>':'')
+    +(vse&&!z.length?'<div class="empty">Ничего не нашлось.</div>':'')+(z.length?z.slice(0,20).map(mzKartaTrekov).join(''):'<div class="empty">Здесь будут ваши песни.</div>');
   h+='<button class="btn b w" data-act="mz-studiya" style="margin-top:14px">Все настройки модели (Студия)</button></div>';
   return h;
 }
@@ -860,8 +906,8 @@ function mzOtvet(t,err){
   MZ.shag=2; mzSohr(); toast('Текст готов — можно поправить'); if(cur==='razdel'&&curK==='muzyka') redraw();
 }
 function mzPesnya(){
-  var minus=MZ.tab==='minus', stil=(MZ.stil||mzStilAvto()).trim();
-  if(minus){ stil=[MZ.minus.trim(),mzStilAvto().replace(/(, )?(russian|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental'; if(stil===', instrumental'){ toast('Опишите, какая музыка нужна'); return; } }
+  var minus=MZ.tab==='minus', stil=(zvStil()||mzStilAvto()).trim(); if(!minus&&MZ.yazyk==='Русский'&&stil.indexOf('russian')<0) stil+=', russian vocals';
+  if(minus){ var zs=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}).map(function(y){return y.s}).join(', ')||(MZ.zvTab==='svoy'?(MZ.stil||'').trim():''); stil=[MZ.minus.trim(),zs||mzStilAvto().replace(/(, )?(russian|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental, no vocals'; if(stil===', instrumental, no vocals'){ toast('Опишите, какая музыка нужна или выберите звучание'); return; } }
   else if(!MZ.tekst.trim()){ toast('Нет текста песни'); return; }
   if(!stil) stil='pop';
   var nazv=((minus?MZ.mNazv:MZ.nazv)||(minus?'Минусовка':'Песня')).slice(0,80);
@@ -879,6 +925,9 @@ function mzKlik(d){
   if(a==='mz-v'){ var mf=d.mf; MZ[mf]=(MZ[mf]===d.v&&mf!=='versiya'&&mf!=='yazyk'&&mf!=='golos')?'':d.v; if(mf==='zhanr'||mf==='nastr'||mf==='yazyk') MZ.stil=''; mzSohr(); redraw(); return true; }
   if(a==='mz-sochinit'){ mzSochinit(); return true; }
   if(a==='mz-op'){ mzOp(); return true; }
+  if(a==='mz-f'){ MZ.fF=d.v; mzSohr(); redraw(); return true; }
+  if(a==='mz-izb'){ var iz=(MZ.izb||[]).slice(), k=iz.indexOf(d.u); if(k>=0) iz.splice(k,1); else iz.push(d.u); MZ.izb=iz.slice(-200); mzSohr(); redraw(); return true; }
+  if(a==='mz-ideya'){ MZ.ideya=(MZ.ideya.trim()?MZ.ideya.trim()+'. ':'')+d.v+': '; mzSohr(); redraw(); var ta=document.querySelector('[data-mz="ideya"]'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); } return true; }
   if(a==='mz-ist'){ MZ.ist={tip:'moy',taskId:d.tid,audioId:d.aid,dur:+d.dur||0,title:d.nm}; if(d.op){ MZ.tab=d.op; MZ.kNazv=''; MZ.pNazv=''; MZ.sek=''; } mzSohr(); if(d.op&&!(cur==='razdel'&&curK==='muzyka')){ PL.polnyy=false; plRis(); show('razdel','muzyka'); } else redraw(); if(d.op) window.scrollTo(0,0); return true; }
   if(a==='mz-ist-x'){ MZ.ist=null; mzSohr(); redraw(); return true; }
   if(a==='mz-fayl'){ if(MZ.fZagr) return true; pzZagrKuda.k='__mz'; var fi=document.getElementById('pz-fayl'); fi.multiple=false; fi.accept='audio/*'; fi.click(); return true; }
@@ -893,7 +942,7 @@ function mzKlik(d){
   return false;
 }
 document.addEventListener('input',function(e){ var t=e.target; if(t.dataset&&t.dataset.mz){ MZ[t.dataset.mz]=t.value; mzSohr(); } });
-document.addEventListener('toggle',function(e){ var t=e.target; if(t.classList&&t.classList.contains('mzd')&&/Мои тексты/.test(t.textContent.slice(0,20))){ MZ.otkrytTeksty=t.open; mzSohr(); } },true);
+document.addEventListener('toggle',function(e){ var t=e.target; if(t.dataset&&t.dataset.dk){ MZ[t.dataset.dk]=t.open; mzSohr(); } },true);
 
 var virX=null, virZ=null;
 function virNachat(x){ virX=x; pzZagrKuda.k='__vir'; var fi=document.getElementById('pz-fayl'); fi.multiple=false; fi.accept='image/*'; fi.click(); toast('Выберите своё фото — лицо крупно, анфас'); }
@@ -1026,6 +1075,7 @@ document.addEventListener('click',function(e){
   if(d.zd!=null){ K&&K.ubratZadanie(+d.zd); redraw(); return; }
   if(d.z!=null){ if(st==='net'){ toast('Отправится, когда сервер заработает'); retry(); return; } K&&K.otpravitZadanie(+d.z); return; }
   if(d.act && d.act.indexOf('pl-')===0 && plKlik(d,t)) return;
+  if(d.act && d.act.indexOf('zv-')===0 && zvKlik(d)) return;
   if(d.act && d.act.indexOf('mz-')===0 && mzKlik(d)) return;
   if(d.act && d.act.indexOf('pz-')===0 && pzKlik(d)) return;
   var a=d.act;

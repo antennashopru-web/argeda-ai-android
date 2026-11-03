@@ -198,7 +198,7 @@ details[open] summary{margin-bottom:12px}
 #plmini{position:fixed;left:12px;right:12px;bottom:92px;z-index:6;max-width:520px;margin:0 auto;display:none;align-items:center;gap:6px;padding:8px 10px 10px;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--liniya);border-radius:20px;overflow:hidden}
 #plmini.on{display:flex}body.s-pleerom{padding-bottom:190px}
 .plm,.trm,.plr{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;color:var(--tekst);font:inherit;text-align:left}
-.plo{width:48px;height:48px;border-radius:12px;flex:none;overflow:hidden;position:relative}.plo img,.plk img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}.plo,.plk{position:relative;display:grid;place-items:center}.pln8{width:46%;height:46%;fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.plo{width:48px;height:48px;border-radius:12px;flex:none;overflow:hidden;position:relative}.plo img,.plk img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}.plo,.plk{position:relative;display:grid;place-items:center}.plk .pln8{display:none}.trm{width:100%}.pln8{width:46%;height:46%;fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .plt{min-width:0;display:flex;flex-direction:column;gap:2px}.plt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.plt small{color:var(--tekst3);font-size:12.5px}
 .plb{width:42px;height:42px;flex:none;border-radius:50%;border:0;background:none;color:var(--tekst);display:grid;place-items:center;padding:0;position:relative}.plb svg{width:22px;height:22px}
 .plb.a,.plb.big{background:linear-gradient(135deg,#ffb35c,#ff6a4d);color:#1a1206}.plb.x{background:var(--knopka)}.plb.vkl{background:rgba(255,154,60,.18);color:#ff8a3c}.plb em{position:absolute;font-size:9px;font-style:normal;font-weight:800;top:9px;right:9px}
@@ -479,6 +479,7 @@ var IKP={play:'<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5
  tekst:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 11h16M4 16h10"/></svg>'};
 var PL={q:[],i:-1,shuf:false,rep:0,spd:1,tekst:false,polnyy:false};
 var plA=new Audio(); plA.preload='metadata';
+window.__PL=function(){ return {PL:PL,a:plA,MZ:MZ}; };
 function plTreki(x){ if(x.tip!=='muzyka'||x.st!=='gotovo') return [];
   var t=(x.treki&&x.treki.length)?x.treki:(x.urls||[]).filter(function(u){return /\.(mp3|wav|m4a)(\?|$)/i.test(u)}).map(function(u){return {url:u}});
   return t.map(function(y,i){ return {url:y.url,title:y.title||String(x.nazv||'Песня').replace(/^(Песня|Минусовка|Кавер|Продление|Вокал на минус): /,''),img:y.img||'',dur:y.dur||0,tekst:y.tekst||'',stil:y.stil||'',taskId:x.id,audioId:y.id||'',n:i+1}; }); }
@@ -658,8 +659,9 @@ function formaHtml(){
   }
   return h;
 }
+var pzNazad=null;
 S.pryamoy=function(){
-  var h='<button class="back" data-go="kabinet">'+svg('nazad')+'Назад</button><div class="title">Студия</div>';
+  var h=(pzNazad?'<button class="back" data-r="'+pzNazad+'">':'<button class="back" data-go="kabinet">')+svg('nazad')+'Назад</button><div class="title">Студия</div>';
   if(!P) return h+'<div class="empty">Доступно только в приложении.</div>';
   if(!pzEst()){
     return h+'<p class="sub" style="margin:0 0 16px">Все модели сайта прямо с телефона — по вашему ключу. Ключ хранится только в этом телефоне в зашифрованном виде и уходит только в сервис генерации.</p>'
@@ -750,7 +752,7 @@ function muzykaHtml(){
     h+=mzOpHtml();
   } else {
     h+='<label class="pl">Какая музыка нужна</label><textarea data-mz="minus" style="min-height:100px" placeholder="Например: фон для ролика о путешествии, лёгкая гитара, без слов">'+esc(MZ.minus)+'</textarea>'
-      +'<label class="pl">Название</label><input type="text" data-mz="nazv" maxlength="80" value="'+esc(MZ.nazv)+'" placeholder="Минусовка">'
+      +'<label class="pl">Название</label><input type="text" data-mz="mNazv" maxlength="80" value="'+esc(MZ.mNazv||'')+'" placeholder="Минусовка">'
       +'<label class="pl">Жанр</label>'+mzChips('zhanr',MZ_ZH)+'<label class="pl">Настроение</label>'+mzChips('nastr',MZ_NS)
       +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
       +'<button class="btn a w" data-act="mz-pesnya">Создать минусовку</button><div class="hint" style="margin-top:6px">Только музыка, без пения. Два варианта.</div>';
@@ -761,7 +763,7 @@ function muzykaHtml(){
   return h;
 }
 /* --- Продлить / Кавер / Вокал на минус --- */
-function mzTreki(){ var o=[]; pzList().forEach(function(x){ if(x.tip==='muzyka'&&x.st==='gotovo') (x.treki||[]).forEach(function(t,i){ o.push({taskId:x.id,audioId:t.id,title:t.title||x.nazv||'Песня',dur:t.dur||0,url:t.url,n:i+1}); }); }); return o.reverse(); }
+function mzTreki(){ var o=[]; pzList().slice().reverse().forEach(function(x){ if(x.tip==='muzyka'&&x.st==='gotovo') (x.treki||[]).forEach(function(t,i){ o.push({taskId:x.id,audioId:t.id,title:t.title||x.nazv||'Песня',dur:t.dur||0,url:t.url,n:i+1}); }); }); return o; }
 function mzIstHtml(razreshitFayl, podpis){
   var tr=mzTreki(), ist=MZ.ist||{};
   var h='<label class="pl">'+podpis+'</label>';
@@ -776,7 +778,7 @@ function mzOpHtml(){
     var ist=MZ.ist&&MZ.ist.tip==='fayl'?MZ.ist:null;
     h+='<label class="pl">Ваш минус</label><div class="fl">'+(ist?'<span class="fi">'+esc((ist.name||'файл').slice(-28))+' <button data-act="mz-ist-x">×</button></span>':'<button class="fb" data-act="mz-fayl">'+(MZ.fZagr?'Загружаю…':'+ Загрузить минус (mp3, wav)')+'</button>')+'</div>'
       +'<small class="pd">Музыка без голоса — ИИ споёт на неё ваши слова.</small>'
-      +'<label class="pl">Название</label><input type="text" data-mz="nazv" maxlength="80" value="'+esc(MZ.nazv)+'" placeholder="Название песни">'
+      +'<label class="pl">Название</label><input type="text" data-mz="vNazv" maxlength="80" value="'+esc(MZ.vNazv||'')+'" placeholder="Название песни">'
       +'<label class="pl">Слова песни</label><textarea data-mz="tekst" style="min-height:180px" placeholder="[Куплет]&#10;…&#10;&#10;[Припев]&#10;…">'+esc(MZ.tekst)+'</textarea>'
       +mzMoiTeksty()
       +'<label class="pl">Как петь (стиль)</label><textarea data-mz="stil" style="min-height:60px" placeholder="Например: тёплый женский вокал, поп">'+esc(MZ.stil)+'</textarea>'
@@ -786,7 +788,7 @@ function mzOpHtml(){
     h+=mzIstHtml(true,'Какую песню перепеть')
       +'<label class="pl">Новое звучание</label><textarea data-mz="stil" style="min-height:70px" placeholder="Например: рок, электрогитары, мужской вокал">'+esc(MZ.stil)+'</textarea>'
       +'<small class="pd">Мелодия останется, а стиль и исполнение будут новыми.</small>'
-      +'<label class="pl">Название</label><input type="text" data-mz="nazv" maxlength="80" value="'+esc(MZ.nazv)+'" placeholder="Кавер">'
+      +'<label class="pl">Название</label><input type="text" data-mz="kNazv" maxlength="80" value="'+esc(MZ.kNazv||'')+'" placeholder="Кавер">'
       +'<label class="pl">Новые слова (необязательно)</label><textarea data-mz="kTekst" style="min-height:100px" placeholder="Пусто — слова как в оригинале">'+esc(MZ.kTekst||'')+'</textarea>'
       +'<label class="pl">Голос</label>'+mzGolosChips()
       +'<button class="btn a w" data-act="mz-op">Сделать кавер</button>';
@@ -802,7 +804,7 @@ function mzOpHtml(){
 }
 function mzOp(){
   var t=MZ.tab, ist=MZ.ist||{}, v=MZ.versiya||'V6', inp, model, nm, kak;
-  var nazv=(MZ.nazv||'').trim().slice(0,80);
+  var nazv=(MZ[{vokal:'vNazv',kaver:'kNazv',prodlit:'pNazv'}[t]]||'').trim().slice(0,80);
   if(t==='vokal'){
     if(ist.tip!=='fayl'){ toast('Загрузите минус'); return; }
     if(!MZ.stil.trim()){ toast('Напишите, как петь'); return; }
@@ -862,7 +864,7 @@ function mzPesnya(){
   if(minus){ stil=[MZ.minus.trim(),mzStilAvto().replace(/(, )?(russian|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental'; if(stil===', instrumental'){ toast('Опишите, какая музыка нужна'); return; } }
   else if(!MZ.tekst.trim()){ toast('Нет текста песни'); return; }
   if(!stil) stil='pop';
-  var nazv=(MZ.nazv||(minus?'Минусовка':'Песня')).slice(0,80);
+  var nazv=((minus?MZ.mNazv:MZ.nazv)||(minus?'Минусовка':'Песня')).slice(0,80);
   var inp={custom_mode:true, instrumental:minus, model:MZ.versiya||'V6', title:nazv, style:stil.slice(0,1000)};
   if(!minus){ inp.lyrics=MZ.tekst.slice(0,5000); if(MZ.golos) inp.vocal_gender=MZ.golos; }
   sprosit((minus?'Создать минусовку':'Создать песню')+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего ключа.', function(){
@@ -877,12 +879,12 @@ function mzKlik(d){
   if(a==='mz-v'){ var mf=d.mf; MZ[mf]=(MZ[mf]===d.v&&mf!=='versiya'&&mf!=='yazyk'&&mf!=='golos')?'':d.v; if(mf==='zhanr'||mf==='nastr'||mf==='yazyk') MZ.stil=''; mzSohr(); redraw(); return true; }
   if(a==='mz-sochinit'){ mzSochinit(); return true; }
   if(a==='mz-op'){ mzOp(); return true; }
-  if(a==='mz-ist'){ MZ.ist={tip:'moy',taskId:d.tid,audioId:d.aid,dur:+d.dur||0,title:d.nm}; if(d.op){ MZ.tab=d.op; MZ.nazv=''; MZ.sek=''; } mzSohr(); if(d.op&&!(cur==='razdel'&&curK==='muzyka')){ PL.polnyy=false; plRis(); show('razdel','muzyka'); } else redraw(); if(d.op) window.scrollTo(0,0); return true; }
+  if(a==='mz-ist'){ MZ.ist={tip:'moy',taskId:d.tid,audioId:d.aid,dur:+d.dur||0,title:d.nm}; if(d.op){ MZ.tab=d.op; MZ.kNazv=''; MZ.pNazv=''; MZ.sek=''; } mzSohr(); if(d.op&&!(cur==='razdel'&&curK==='muzyka')){ PL.polnyy=false; plRis(); show('razdel','muzyka'); } else redraw(); if(d.op) window.scrollTo(0,0); return true; }
   if(a==='mz-ist-x'){ MZ.ist=null; mzSohr(); redraw(); return true; }
   if(a==='mz-fayl'){ if(MZ.fZagr) return true; pzZagrKuda.k='__mz'; var fi=document.getElementById('pz-fayl'); fi.multiple=false; fi.accept='audio/*'; fi.click(); return true; }
   if(a==='mz-pesnya'){ mzPesnya(); return true; }
   if(a==='mz-moya'){ var e=document.getElementById('mz-moya'); if(e) e.scrollIntoView({behavior:'smooth'}); return true; }
-  if(a==='mz-studiya'){ pzKat='muzyka'; show('pryamoy'); return true; }
+  if(a==='mz-studiya'){ pzKat='muzyka'; pzNazad='muzyka'; show('pryamoy'); return true; }
   if(a==='mz-tsohr'){ if(!MZ.tekst.trim()){ toast('Текст пустой'); return true; } var l=mzTeksty(), id=MZ.tid, x=id&&l.filter(function(y){return y.id===id})[0];
     if(!x){ x={id:'t'+Date.now()}; l.unshift(x); MZ.tid=x.id; } x.nazv=MZ.nazv||MZ.tekst.split('\n').filter(Boolean)[0].slice(0,80); x.tekst=MZ.tekst; x.stil=MZ.stil; x.t=Date.now();
     mzTekstySohr(l); mzSohr(); toast('Текст сохранён в телефоне'); redraw(); return true; }
@@ -986,7 +988,8 @@ function pzKlik(d){
 
 var cur='glavnaya', curK=null, prev=null;
 function show(name,k){
-  if(cur!=='razdel') prev=cur;
+  if(cur!=='razdel' && !(cur==='pryamoy'&&pzNazad)) prev=cur;
+  if(name!=='pryamoy') pzNazad=null;
   cur=name; curK=k||null;
   var a=document.getElementById('app');
   a.innerHTML = name==='razdel' ? S.razdel(k) : S[name]();
@@ -1054,7 +1057,7 @@ function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povt
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
 window.karkasPerekladka=function(){ var y=window.scrollY; window.scrollTo(0,y+1); window.scrollTo(0,y); };
 if(window.visualViewport) visualViewport.addEventListener('resize',function(){ var a=document.activeElement; if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)) return; if(visualViewport.offsetTop>0.5) window.karkasPerekladka(); });
-window.karkasNazad=function(){ if(PL.polnyy){ PL.polnyy=false; plRis(); return 'ok'; } if(zakrytProsmotr()) return 'ok'; if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
+window.karkasNazad=function(){ if(PL.polnyy){ PL.polnyy=false; plRis(); return 'ok'; } if(zakrytProsmotr()) return 'ok'; if(cur==='razdel'){ show(prev||'glavnaya'); return 'ok'; } if(cur==='pryamoy'&&pzNazad){ show('razdel',pzNazad); return 'ok'; } if(cur!=='glavnaya'){ show('glavnaya'); return 'ok'; } return 'net'; };
 window.karkasEkran=function(o){ if(!o) return; if(o.t) podel=o.t; if(S[o.n]||o.n==='razdel') show(o.n, o.k||null); };
 sostoyanie(K ? K.sostoyanie() : 'proverka');
 var e0 = K && K.startEkran ? K.startEkran() : '';

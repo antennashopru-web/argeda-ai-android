@@ -26,7 +26,7 @@ class Obnovlenie {
     static final String BASE = "https://ai.argeda.ru/prilozhenie/";
     static final String JSON_URL = BASE + "versiya.json";
     static final String APK_URL = BASE + "ARGEDA-AI.apk";
-    static final long INTERVAL_MS = 6 * 3600_000L;
+    static final long INTERVAL_MS = 20 * 60_000L;   // every launch/return, at most once per 20 min
 
     private final Activity a;
     private final SharedPreferences sp;
@@ -91,7 +91,7 @@ class Obnovlenie {
         if (a.isFinishing() || readyApk == null) return;
         int skipped = sp.getInt("skip", 0);
         // "Позже" for this version: ask again a day later
-        if (skipped == readyCode && System.currentTimeMillis() - sp.getLong("skipT", 0) < 24 * 3600_000L) return;
+        if (skipped == readyCode && System.currentTimeMillis() - sp.getLong("skipT", 0) < 3 * 3600_000L) return;
         new AlertDialog.Builder(a)
                 .setTitle("Обновление ARGEDA AI " + readyName)
                 .setMessage((chto == null || chto.isEmpty() ? "Доступна новая версия приложения." : chto) + "\n\nУстановить сейчас? Это займёт несколько секунд.")

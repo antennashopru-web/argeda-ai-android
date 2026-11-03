@@ -202,6 +202,11 @@ class Karkas {
         @JavascriptInterface public String fayly() { return prefs.getString("fayly", "[]"); }
         @JavascriptInterface public String stranitsy() { return prefs.getString("stranitsy", "[]"); }
         @JavascriptInterface public boolean set() { return estSet(a); }
+        @JavascriptInterface public String temaSistemy() {
+            int m = a.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+            return m == android.content.res.Configuration.UI_MODE_NIGHT_YES ? "dark" : "light";
+        }
+        @JavascriptInterface public void obnovlenie() { a.runOnUiThread(a::proveritObnovlenie); }
         @JavascriptInterface public String versiya() {
             try { return a.getPackageManager().getPackageInfo(a.getPackageName(), 0).versionName; } catch (Exception e) { return ""; }
         }

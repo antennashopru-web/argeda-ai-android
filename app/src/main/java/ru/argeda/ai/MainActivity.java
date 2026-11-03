@@ -420,7 +420,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.9");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/3.0");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -609,6 +609,12 @@ public class MainActivity extends Activity {
             try { startActivity(v); } catch (ActivityNotFoundException e) { Toast.makeText(MainActivity.this, "Файл сохранён в «Загрузки»: нет приложения, чтобы его открыть", Toast.LENGTH_LONG).show(); }
         }
     };
+
+    void proveritObnovlenie() {
+        if (obnovlenie == null) return;
+        Toast.makeText(this, "Проверяю обновление…", Toast.LENGTH_SHORT).show();
+        obnovlenie.proverit(true);
+    }
 
     void download(WebView owner, String url, String ua, String contentDisposition, String mime) {
         try {

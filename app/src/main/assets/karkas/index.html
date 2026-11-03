@@ -10,16 +10,16 @@
 :root{--fon:#090b11;--pov1:#11141d;--pov2:#161a25;--liniya:rgba(255,255,255,.08);--knopka:rgba(255,255,255,.07);
   --tekst:#eef0f6;--tekst2:#8e95aa;--a1:#ffb45c;--a2:#ff6a55;--na-akcente:#1c0e05;--uspeh:#2fbf71;--oshibka:#f0524f}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--fon);color:var(--tekst);font:500 15px/1.45 Manrope,system-ui,sans-serif}
+html,body{margin:0;background:var(--fon);color:var(--tekst);font:400 15px/1.5 Onest,system-ui,sans-serif}
 body{padding-bottom:104px;overscroll-behavior:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0;text-align:inherit}
 .wrap{max-width:640px;margin:0 auto;padding:0 16px}
-.u{font-family:Unbounded,Manrope,sans-serif;letter-spacing:-.02em}
+.u{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em}
 /* шапка */
 .top{position:sticky;top:0;z-index:5;background:rgba(9,11,17,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--liniya)}
 .top .wrap{display:flex;align-items:center;gap:10px;height:60px}
 .top img{width:26px;height:26px;border-radius:7px}
-.top b{font-family:Unbounded;font-weight:700;font-size:17px;letter-spacing:.02em}
+.top b{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:24px;letter-spacing:.04em}
 .chip{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:var(--knopka);border:1px solid var(--liniya);border-radius:99px;height:38px;padding:0 14px}
 .chip i{width:10px;height:10px;border-radius:50%;background:var(--oshibka);box-shadow:0 0 10px var(--oshibka)}
 .chip.proverka i{background:var(--a1);box-shadow:0 0 10px var(--a1);animation:pulse .9s infinite alternate}
@@ -27,10 +27,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 @keyframes pulse{to{opacity:.3}}
 /* баннер главной */
 .hero{position:relative;margin:16px 0 28px;border-radius:24px;overflow:hidden;background:var(--pov1);border:1px solid var(--liniya);min-height:470px}
-.hero .svet{position:absolute;inset:0;pointer-events:none}
+.hero .svet{position:absolute;inset:0;pointer-events:none;opacity:.55}
+.hero .foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0}
+.hero:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,11,17,.15) 0%,rgba(9,11,17,.35) 40%,rgba(9,11,17,.92) 100%);pointer-events:none}
+.hero .in{z-index:1}
 .hero .in{position:relative;padding:42px 22px 22px}
 .kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--a1);margin-bottom:14px}
-.hero h1{font-family:Unbounded;font-weight:700;font-size:33px;line-height:1.08;letter-spacing:-.03em;margin:0 0 16px}
+.hero h1{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:46px;line-height:.98;margin:0 0 16px}
 .hero p{margin:0 0 26px;color:#c3c8d6;font-size:15px}
 .btn{display:inline-flex;align-items:center;justify-content:center;height:54px;padding:0 28px;border-radius:99px;font-weight:700;font-size:14.5px}
 .btn.a{background:linear-gradient(90deg,var(--a1),var(--a2));color:var(--na-akcente);box-shadow:0 10px 34px rgba(255,140,80,.38)}
@@ -41,7 +44,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .btn:disabled{opacity:.55}
 /* заголовок блока */
 .blok{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 16px}
-.blok h2{font-family:Unbounded;font-weight:600;font-size:17px;letter-spacing:-.03em;margin:0;white-space:nowrap}
+.blok h2{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:25px;line-height:1;margin:0;white-space:nowrap}
 .blok button{color:var(--tekst2);font-size:13px;font-weight:600;white-space:nowrap}
 .sub{color:var(--tekst2);margin:-8px 0 16px;font-size:14px}
 /* плитки разделов */
@@ -49,7 +52,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .tile{position:relative;aspect-ratio:1;border-radius:20px;overflow:hidden;background:var(--pov1);border:1px solid var(--liniya);text-align:left}
 .tile .art{position:absolute;inset:0;width:100%;height:100%}
 .tile .pod{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(180deg,transparent,rgba(9,11,17,.85) 55%)}
-.tile b{display:block;font-family:Unbounded;font-weight:600;font-size:16px;letter-spacing:-.03em;line-height:1.25}
+.tile b{display:block;font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:23px;line-height:1}
 .tile small{display:block;color:var(--tekst2);font-size:12.5px;margin-top:3px}
 .tile i{position:absolute;top:10px;right:10px;font-style:normal;font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;background:rgba(47,191,113,.16);color:var(--uspeh)}
 /* плашка состояния */
@@ -64,12 +67,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
 .bnr{position:relative;height:150px;border-radius:22px;overflow:hidden;background:var(--pov1);border:1px solid var(--liniya);margin-bottom:16px}
 .bnr .art{position:absolute;inset:0;width:100%;height:100%}
-.bnr .pod{position:absolute;left:18px;right:18px;bottom:16px}
-.bnr b{display:block;font-family:Unbounded;font-weight:700;font-size:24px;letter-spacing:-.03em}
+.bnr:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,11,17,.88),rgba(9,11,17,.35) 70%,rgba(9,11,17,.1))}
+.bnr .pod{position:absolute;left:18px;right:18px;bottom:16px;z-index:1}
+.bnr b{display:block;font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:34px;line-height:1}
 .bnr small{display:block;color:#c3c8d6;font-size:13.5px;margin-top:4px}
 .uses{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
 .uses span{font-size:13px;font-weight:600;background:var(--knopka);border:1px solid var(--liniya);border-radius:99px;padding:7px 12px;color:#d3d7e2}
-textarea{width:100%;min-height:140px;resize:vertical;background:var(--pov1);color:var(--tekst);border:1px solid var(--liniya);border-radius:18px;padding:14px 16px;font:500 15px/1.45 Manrope,sans-serif;outline:none}
+textarea{width:100%;min-height:140px;resize:vertical;background:var(--pov1);color:var(--tekst);border:1px solid var(--liniya);border-radius:18px;padding:14px 16px;font:400 15px/1.5 Onest,sans-serif;outline:none}
 textarea:focus{border-color:rgba(255,180,92,.6)}
 .hint{color:var(--tekst2);font-size:13px;margin:8px 2px 6px}
 /* работы / файлы */
@@ -97,7 +101,7 @@ textarea:focus{border-color:rgba(255,180,92,.6)}
 .row .ik svg{width:19px;height:19px;stroke:var(--a1);fill:none;stroke-width:2}
 .empty{color:var(--tekst2);font-size:14px;border:1px dashed var(--liniya);border-radius:18px;padding:16px;margin-bottom:12px}
 h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--tekst2);margin:26px 0 12px;font-weight:700}
-.title{font-family:Unbounded;font-weight:700;font-size:26px;letter-spacing:-.03em;margin:22px 0 8px}
+.title{font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:38px;line-height:1;margin:22px 0 8px}
 /* нижняя панель */
 nav{position:fixed;left:12px;right:12px;bottom:12px;z-index:6;max-width:520px;margin:0 auto;height:72px;display:flex;align-items:center;justify-content:space-around;background:rgba(17,20,29,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--liniya);border-radius:24px}
 nav button{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--tekst2);min-width:66px}
@@ -127,11 +131,11 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 #pros .x svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2}
 #pros .med{max-width:100%;max-height:58vh;border-radius:20px;background:#000}
 #pros .tx{width:100%;max-width:420px;margin-top:16px}
-#pros .tx b{display:block;font-family:Unbounded;font-weight:600;font-size:18px;letter-spacing:-.03em}
+#pros .tx b{display:block;font-family:'Sofia Sans Extra Condensed',Onest,sans-serif;text-transform:uppercase;font-weight:800;letter-spacing:.01em;font-size:26px;line-height:1}
 #pros .tx small{display:block;color:var(--tekst2);font-size:13.5px;margin-top:4px}
 #pros .tx em{display:block;font-style:normal;color:#6b7186;font-size:11.5px;margin-top:6px}
 /* прямой режим */
-.pz input[type=password],.pz input[type=text]{width:100%;background:var(--pov1);color:var(--tekst);border:1px solid var(--liniya);border-radius:16px;padding:14px 16px;font:500 15px Manrope,sans-serif;outline:none}
+.pz input[type=password],.pz input[type=text]{width:100%;background:var(--pov1);color:var(--tekst);border:1px solid var(--liniya);border-radius:16px;padding:14px 16px;font:400 15px Onest,sans-serif;outline:none}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .chips button{font-size:13.5px;font-weight:700;background:var(--knopka);border:1px solid var(--liniya);border-radius:99px;padding:8px 14px;color:#d3d7e2}
 .chips button.on{background:linear-gradient(90deg,var(--a1),var(--a2));color:var(--na-akcente);border-color:transparent}
@@ -186,7 +190,9 @@ var L = {
   chat:'<path d="M98 20h70v44h-40l-18 16V64H98z"/><path d="M60 54h56v34H86l-14 12V88H60z"/>',
   rabota:'<rect x="96" y="18" width="74" height="52" rx="4"/><path d="M96 34h74M118 34v36"/><path d="M106 86h54M106 98h38"/>'
 };
+var IMG={video:1,kartinki:1,muzyka:1,golos:1,guby:1,kino:1,chat:1,rabota:1};
 function art(k,w,h){
+  if(IMG[k]) return '<img class="art" src="oformlenie/'+k+'.webp" alt="" style="object-fit:cover">';
   w=w||180; h=h||180;
   return '<svg class="art" viewBox="0 0 180 180" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g'+k+'" x1="0" y1="1" x2="1" y2="0">'
     +'<stop offset="0" stop-color="#f0524f" stop-opacity="0"/><stop offset=".45" stop-color="#f0524f" stop-opacity=".28"/><stop offset="1" stop-color="#ffb45c" stop-opacity=".18"/></linearGradient></defs>'
@@ -303,7 +309,7 @@ function workFile(x,i){
 var S = {
   glavnaya:function(){
     var f = K ? parse(K.fayly()) : []; window._f=f;
-    return '<section class="hero">'+heroArt()+'<div class="in"><div class="kicker">Студия нейросетей</div>'
+    return '<section class="hero"><img class="foto" src="oformlenie/hero.webp" alt="">'+heroArt()+'<div class="in"><div class="kicker">Студия нейросетей</div>'
       +'<h1>Снимайте кино, пишите песни и оживляйте актёров</h1><p>Видео, музыка, голос и картинки от лучших моделей мира. Один баланс, все результаты в «Моих файлах».</p>'
       +'<button class="btn a" data-go="sozdat">Начать создавать</button><br><button class="btn b" data-go="fayly">Смотреть работы</button></div></section>'
       +noteHtml()

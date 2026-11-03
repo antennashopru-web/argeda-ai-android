@@ -230,6 +230,7 @@ public class MainActivity extends Activity {
         web = findViewById(R.id.web);
         progress = findViewById(R.id.progress);
         karkas = new Karkas(this, findViewById(R.id.offline));
+        new Pryamoy(this, findViewById(R.id.offline));
 
         setupWebView(web);
         WebSettings s = web.getSettings();
@@ -412,7 +413,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.5");
+        s.setUserAgentString(s.getUserAgentString() + " ArgedaApp/2.6");
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);
         cm.setAcceptThirdPartyCookies(w, true);
@@ -602,7 +603,7 @@ public class MainActivity extends Activity {
         }
     };
 
-    private void download(WebView owner, String url, String ua, String contentDisposition, String mime) {
+    void download(WebView owner, String url, String ua, String contentDisposition, String mime) {
         try {
             String name = URLUtil.guessFileName(url, contentDisposition, mime);
             if (url.startsWith("blob:") || url.startsWith("data:")) {

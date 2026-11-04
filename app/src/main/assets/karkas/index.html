@@ -133,7 +133,7 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 .razdel-pr{margin-bottom:6px}
 .razdel-pr .lenta{margin-bottom:18px}
 #pros{position:fixed;inset:0;z-index:20;background:rgba(5,6,10,.96);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 16px 24px}
-#pros.on{display:flex}#pros{color:#fff;background:#05060a!important}#pros .btn{margin-top:10px}#pros .btn.b{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}#pros .tx small{color:#b7bccb}
+#pros.on{display:flex}#pros .zm{width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;border-radius:16px}#pros .zm img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;user-select:none;-webkit-user-drag:none}#pros .zmt{font-family:Onest,sans-serif!important;text-transform:none!important;font-size:17px!important;line-height:1.3!important;font-weight:700;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pzz img.rez{cursor:zoom-in}#pros{color:#fff;background:#05060a!important}#pros .btn{margin-top:10px}#pros .btn.b{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}#pros .tx small{color:#b7bccb}
 #pros .x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:var(--knopka);display:flex;align-items:center;justify-content:center}
 #pros .x svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2}
 #pros .med{max-width:100%;max-height:58vh;border-radius:20px;background:#000}
@@ -404,9 +404,29 @@ function fImya(x){ var b=fBaza(x.name), k=fKarta()[b]||fNaiti(b), m=x.mime||'';
     else n=raw.replace(/[_]+/g,' '); }
   if(n.length>60) n=n.slice(0,57).trim()+'…';
   return {nazv:n,img:k&&k.img||''}; }
+function zoomOtkryt(src,nazv,pod,knopki){ var el=document.getElementById('pros'); prosI=-1;
+  el.innerHTML='<button class="x" data-act="zakryt">'+svg('x')+'</button><div class="zm"><img src="'+esc(src)+'" alt="" draggable="false"></div><div class="tx">'+(nazv?'<b class="zmt">'+esc(nazv)+'</b>':'')+'<small>'+esc(pod||'')+' · двумя пальцами или двойным нажатием — увеличить</small>'+(knopki||'')+'</div>';
+  el.classList.add('on'); zoomInit(el.querySelector('.zm')); }
+function zoomInit(box){ var img=box.querySelector('img'), sc=1,x=0,y=0,pts={},st=null,tap=0;
+  function lim(){ var mx=Math.max(0,(img.offsetWidth*sc-box.clientWidth)/2), my=Math.max(0,(img.offsetHeight*sc-box.clientHeight)/2); x=Math.max(-mx,Math.min(mx,x)); y=Math.max(-my,Math.min(my,y)); }
+  function ap(anim){ lim(); img.style.transition=anim?'transform .2s':''; img.style.transform='translate('+x+'px,'+y+'px) scale('+sc+')'; }
+  function cen(){ var r=box.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2}; }
+  function spisok(){ return Object.keys(pts).map(function(k){return pts[k]}); }
+  function nachalo(){ var a=spisok(), c=cen(); if(a.length>=2){ var m={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2}; st={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1,s:sc,m:m,x:x,y:y,c:c}; } else if(a.length===1) st={px:a[0].x,py:a[0].y,x:x,y:y}; else st=null; }
+  function k(sNov,px,py){ var c=cen(), dx=px-c.x, dy=py-c.y; x=dx-(dx-x)*(sNov/sc); y=dy-(dy-y)*(sNov/sc); sc=sNov; }
+  box.addEventListener('pointerdown',function(e){ e.preventDefault(); try{box.setPointerCapture(e.pointerId)}catch(z){} pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(spisok().length===1){ var now=Date.now(); if(now-tap<300){ if(sc>1.05){ sc=1;x=0;y=0; } else k(2.6,e.clientX,e.clientY); ap(true); tap=0; } else tap=now; } nachalo(); });
+  box.addEventListener('pointermove',function(e){ if(!pts[e.pointerId]||!st) return; pts[e.pointerId]={x:e.clientX,y:e.clientY}; var a=spisok();
+    if(a.length>=2&&st.d){ var d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y), m={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2}, sN=Math.max(1,Math.min(6,st.s*d/st.d)), dx=st.m.x-st.c.x, dy=st.m.y-st.c.y;
+      sc=sN; x=dx-(dx-st.x)*(sN/st.s)+(m.x-st.m.x); y=dy-(dy-st.y)*(sN/st.s)+(m.y-st.m.y); ap(); }
+    else if(a.length===1&&st.px!=null&&sc>1){ x=st.x+(a[0].x-st.px); y=st.y+(a[0].y-st.py); ap(); } });
+  function konec(e){ delete pts[e.pointerId]; if(sc<1.03){ sc=1;x=0;y=0; ap(true); } nachalo(); }
+  box.addEventListener('pointerup',konec); box.addEventListener('pointercancel',konec);
+  box.addEventListener('wheel',function(e){ e.preventDefault(); k(Math.max(1,Math.min(6,sc*(e.deltaY<0?1.15:1/1.15))),e.clientX,e.clientY); if(sc<1.03){sc=1;x=0;y=0;} ap(); },{passive:false}); }
 function fOtkryt(i){ var x=window._f[i], el=document.getElementById('pros'); if(!x) return; var m=x.mime||'', im=fImya(x);
   if(m.indexOf('audio/')===0){ PL.q=[{url:x.uri,title:im.nazv,img:im.img,dur:0,tekst:'',stil:'',n:1}]; PL.i=0; PL.skryt=false; plZapusk(); PL.polnyy=true; plRis(); return; }
   if(m.indexOf('image/')!==0&&m.indexOf('video/')!==0){ K&&K.otkrytFayl(x.uri,m); return; }
+  if(m.indexOf('image/')===0){ zoomOtkryt(x.uri,im.nazv,fVid(m)+' · '+kogda(x.t),'<button class="btn a w" data-fs="'+i+'">Поделиться</button><button class="btn b w" data-act="f-vne" data-v="'+i+'">Открыть в галерее</button>'); return; }
   prosI=-1;
   var med=m.indexOf('video/')===0?'<video class="med" src="'+esc(x.uri)+'" controls autoplay playsinline></video>':'<img class="med" src="'+esc(x.uri)+'" alt="">';
   el.innerHTML='<button class="x" data-act="zakryt">'+svg('x')+'</button>'+med+'<div class="tx"><b>'+esc(im.nazv)+'</b><small>'+fVid(m)+' · '+kogda(x.t)+' · сохранено в телефоне</small>'
@@ -621,7 +641,7 @@ function pzKarta(x){
   var trh=plTrekHtml(x); if(trh) h+=trh; else (x.urls||[]).forEach(function(u){
     var m = /\.(mp4|mov)(\?|$)/i.test(u)?'video/mp4':/\.(mp3|wav|m4a)(\?|$)/i.test(u)?'audio/mpeg':'image/jpeg';
     h += m==='video/mp4' ? '<video class="rez" src="'+esc(u)+'" controls playsinline loop></video>'
-       : m==='audio/mpeg' ? '<audio src="'+esc(u)+'" controls></audio>' : '<img class="rez" src="'+esc(u)+'" alt="">';
+       : m==='audio/mpeg' ? '<audio src="'+esc(u)+'" controls></audio>' : '<img class="rez" src="'+esc(u)+'" alt="" data-act="zoom" data-u="'+esc(u)+'" data-t="'+esc(x.prompt||'')+'">';
     h += '<div class="ry" style="margin-bottom:8px"><button data-act="pz-skachat" data-u="'+esc(u)+'" data-m="'+m+'">Сохранить в телефон</button></div>';
   });
   h+='<div class="ry">'+(x.st!=='idet'?'<button data-act="pz-ubrat" data-id="'+esc(x.id)+'">Убрать</button>':'')+(x.st==='oshibka'?'<button data-act="pz-snova" data-id="'+esc(x.id)+'">Повторить</button>':'')+'</div></div>';
@@ -1107,6 +1127,7 @@ document.addEventListener('click',function(e){
   var t=e.target.closest('[data-pm],[data-go],[data-r],[data-site],[data-act],[data-z],[data-zd],[data-f],[data-fs],[data-kop]'); if(!t) return;
   var d=t.dataset;
   if(d.pm!=null){ prosmotr(+d.pm); return; }
+  if(d.act==='zoom'){ zoomOtkryt(d.u,d.t,'Готово','<button class="btn a w" data-act="pz-skachat" data-u="'+esc(d.u)+'" data-m="image/jpeg">Сохранить в телефон</button>'); return; }
   if(d.act!=='takoy' && t.closest('#pros')) zakrytProsmotr();
   if(d.go){ show(d.go); return; }
   if(d.r){ if(podel){ try{sessionStorage.setItem('ch-'+d.r,podel)}catch(x){} podel=null; } show('razdel',d.r); return; }

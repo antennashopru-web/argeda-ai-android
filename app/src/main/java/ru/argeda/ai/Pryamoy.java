@@ -117,13 +117,28 @@ class Pryamoy {
         return j;
     }
 
+    /** Text for the person: no provider names or hosts, network failures in plain words. */
+    static String chisto(Throwable e) {
+        if (e instanceof java.net.UnknownHostException || e instanceof java.net.ConnectException || e instanceof java.net.NoRouteToHostException)
+            return "Нет связи с сервисом — проверьте интернет";
+        if (e instanceof java.net.SocketTimeoutException) return "Сервис долго не отвечает, попробуйте ещё раз";
+        if (e instanceof javax.net.ssl.SSLException) return "Не удалось установить защищённое соединение";
+        if (e instanceof org.json.JSONException) return "Сервис ответил непонятно, попробуйте ещё раз";
+        return chisto(String.valueOf(e.getMessage()));
+    }
+    static String chisto(String m) {
+        if (m == null || m.isEmpty() || "null".equals(m)) return "Что-то пошло не так, попробуйте ещё раз";
+        m = m.replaceAll("(?i)https?://\\S+", "").replaceAll("(?i)[a-z0-9.-]*(kie|redpanda)[a-z0-9.-]*", "сервис").trim();
+        return m.length() > 160 ? m.substring(0, 157) + "…" : m;
+    }
+
     private static String oshibka(int code, String msg) {
         switch (code) {
             case 401: return "Ключ не подходит — проверьте его";
             case 402: return "На счёте закончились кредиты";
             case 429: return "Слишком много запросов, подождите минуту";
             case 455: return "Сервис на обслуживании, попробуйте позже";
-            default: return "Ошибка " + code + (msg.isEmpty() ? "" : ": " + msg);
+            default: return "Ошибка " + code + (msg == null || msg.isEmpty() ? "" : ": " + chisto(msg));
         }
     }
 
@@ -259,7 +274,7 @@ class Pryamoy {
                     if (id.isEmpty()) throw new Exception("Сервис не вернул номер задачи");
                     x.put("id", id).put("st", "idet");
                 } catch (Exception e) {
-                    try { x.put("id", "err-" + System.currentTimeMillis()).put("st", "oshibka").put("msg", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+                    try { x.put("id", "err-" + System.currentTimeMillis()).put("st", "oshibka").put("msg", chisto(e)); } catch (Exception ignored) {}
                 }
                 synchronized (Pryamoy.this) { JSONArray z = Pryamoy.this.zadachi(); z.put(x); sohranitZadachi(z); }
                 js("pryamoyObnovit");
@@ -286,7 +301,7 @@ class Pryamoy {
                             izm = true;
                         } else if ("fail".equals(s)) {
                             String m = d.optString("failMsg", "");
-                            x.put("st", "oshibka").put("msg", m.isEmpty() ? "Не получилось, кредиты не списаны" : m);
+                            x.put("st", "oshibka").put("msg", m.isEmpty() ? "Не получилось, кредиты не списаны" : chisto(m));
                             izm = true;
                         } else if (System.currentTimeMillis() - x.optLong("t") > 30 * 60_000L) {
                             x.put("st", "oshibka").put("msg", "Нет ответа 30 минут"); izm = true;
@@ -311,7 +326,7 @@ class Pryamoy {
                     if (id.isEmpty()) throw new Exception("Сервис не вернул номер задачи");
                     x.put("id", id).put("st", "idet");
                 } catch (Exception e) {
-                    try { x.put("id", "err-" + System.currentTimeMillis()).put("st", "oshibka").put("msg", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+                    try { x.put("id", "err-" + System.currentTimeMillis()).put("st", "oshibka").put("msg", chisto(e)); } catch (Exception ignored) {}
                 }
                 synchronized (Pryamoy.this) { JSONArray z = Pryamoy.this.zadachi(); z.put(x); sohranitZadachi(z); }
                 js("pryamoyObnovit");
@@ -322,7 +337,7 @@ class Pryamoy {
         @JavascriptInterface public void zagruzit(String id, String b64, String name, String mime) {
             bg.execute(() -> {
                 String url = null, err = null;
-                try { url = otpravitFayl(Base64.decode(b64, Base64.DEFAULT), name, mime); } catch (Exception e) { err = String.valueOf(e.getMessage()); }
+                try { url = otpravitFayl(Base64.decode(b64, Base64.DEFAULT), name, mime); } catch (Exception e) { err = chisto(e); }
                 otvetZagruzki(id, url, err);
             });
         }
@@ -337,7 +352,7 @@ class Pryamoy {
                     ByteArrayOutputStream b = new ByteArrayOutputStream(); byte[] buf = new byte[8192]; int n;
                     while ((n = in.read(buf)) > 0) b.write(buf, 0, n); in.close();
                     url = otpravitFayl(b.toByteArray(), put.substring(put.lastIndexOf('/') + 1), mime);
-                } catch (Exception e) { err = String.valueOf(e.getMessage()); }
+                } catch (Exception e) { err = chisto(e); }
                 otvetZagruzki(id, url, err);
             });
         }
@@ -364,7 +379,7 @@ class Pryamoy {
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < ct.length(); i++) { JSONObject bl = ct.optJSONObject(i); if (bl != null && "text".equals(bl.optString("type"))) sb.append(bl.optString("text")); }
                     txt = sb.toString();
-                } catch (Exception e) { err = String.valueOf(e.getMessage()); }
+                } catch (Exception e) { err = chisto(e); }
                 final String t = txt, er = err;
                 view.post(() -> view.evaluateJavascript("window.pzChat&&pzChat(" + (t == null ? "null" : JSONObject.quote(t)) + "," + (er == null ? "null" : JSONObject.quote(er)) + ")", null));
             });

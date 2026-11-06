@@ -1171,7 +1171,11 @@ function retry(){ if(!K||st==='proverka') return; sostoyanie('proverka'); K.povt
 window.karkasObnovit=function(s){ sostoyanie(s); redraw(); };
 function klavPole(a){ return a&&(a.tagName==='TEXTAREA'||a.tagName==='SELECT'&&false||a.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range|file|color)$/.test(a.type)||a.isContentEditable); }
 window.karkasKlav=function(on){ document.body.classList.toggle('klav',!!on); if(on){ var a=document.activeElement; if(klavPole(a)) setTimeout(function(){ try{ a.scrollIntoView({block:'center'}); }catch(e){} },120); } };
-document.addEventListener('focusin',function(e){ if(klavPole(e.target)) window.karkasKlav(true); });
+var klavVys=window.innerHeight;
+window.addEventListener('resize',function(){ if(!document.body.classList.contains('klav')) klavVys=Math.max(klavVys,window.innerHeight); });
+document.addEventListener('focusin',function(e){ if(!klavPole(e.target)) return; window.karkasKlav(true);
+  // no on-screen keyboard (tablet with a keyboard, or the system did not resize): bring the menu back
+  setTimeout(function(){ if(window.innerHeight>klavVys*0.85) document.body.classList.remove('klav'); },900); });
 document.addEventListener('focusout',function(){ setTimeout(function(){ if(!klavPole(document.activeElement)) document.body.classList.remove('klav'); },150); });
 window.karkasPerekladka=function(){ document.body.classList.remove('klav'); var ae=document.activeElement; if(klavPole(ae)) ae.blur();  var y=window.scrollY; window.scrollTo(0,y+1); window.scrollTo(0,y); };
 if(window.visualViewport) visualViewport.addEventListener('resize',function(){ var a=document.activeElement; if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)) return; if(visualViewport.offsetTop>0.5) window.karkasPerekladka(); });

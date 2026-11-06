@@ -27,6 +27,7 @@ class Obnovlenie {
     static final String JSON_URL = BASE + "versiya.json";
     static final String APK_URL = BASE + "ARGEDA-AI.apk";
     static final long INTERVAL_MS = 20 * 60_000L;   // every launch/return, at most once per 20 min
+    static final long PAUZA_MS = 3 * 3600_000L;      // after "Позже"
 
     private final Activity a;
     private final SharedPreferences sp;
@@ -78,8 +79,13 @@ class Obnovlenie {
                     name = pi.versionName == null ? "" : pi.versionName;
                 }
                 if (code <= mine) { if (f != null) f.delete(); busy = false; return; }
+                // "Позже" for this version: do not download it again during the pause (saves mobile data)
+                if (sp.getInt("skip", 0) == code && System.currentTimeMillis() - sp.getLong("skipT", 0) < PAUZA_MS) { if (f != null) f.delete(); busy = false; return; }
+                if (f == null && readyApk != null && readyCode == code && readyApk.exists() && proverkaFayla(readyApk, code)) f = readyApk;
                 if (f == null) f = download(url);
                 if (f == null) { busy = false; return; }
+                // a cut connection leaves half a file: the installer would say "error parsing the package"
+                if (!proverkaFayla(f, code)) { f.delete(); busy = false; return; }
                 readyApk = f; readyCode = code; readyName = name;
                 final String what = chto;
                 a.runOnUiThread(() -> predlozhit(what));
@@ -90,8 +96,8 @@ class Obnovlenie {
     private void predlozhit(String chto) {
         if (a.isFinishing() || readyApk == null) return;
         int skipped = sp.getInt("skip", 0);
-        // "Позже" for this version: ask again a day later
-        if (skipped == readyCode && System.currentTimeMillis() - sp.getLong("skipT", 0) < 3 * 3600_000L) return;
+        // "Позже" for this version: ask again 3 hours later
+        if (skipped == readyCode && System.currentTimeMillis() - sp.getLong("skipT", 0) < PAUZA_MS) return;
         new AlertDialog.Builder(a)
                 .setTitle("Обновление ARGEDA AI " + readyName)
                 .setMessage((chto == null || chto.isEmpty() ? "Доступна новая версия приложения." : chto) + "\n\nУстановить сейчас? Это займёт несколько секунд.")
@@ -118,6 +124,16 @@ class Obnovlenie {
     /** After returning from the "unknown sources" settings screen. */
     void posleNastroek() {
         if (sp.getBoolean("pending", false) && readyApk != null && Build.VERSION.SDK_INT >= 26 && a.getPackageManager().canRequestPackageInstalls()) ustanovit();
+    }
+
+    /** The file is a whole APK of this app with the expected version. */
+    private boolean proverkaFayla(File f, int code) {
+        try {
+            PackageInfo pi = a.getPackageManager().getPackageArchiveInfo(f.getAbsolutePath(), 0);
+            if (pi == null || !a.getPackageName().equals(pi.packageName)) return false;
+            int c = Build.VERSION.SDK_INT >= 28 ? (int) pi.getLongVersionCode() : pi.versionCode;
+            return c == code;
+        } catch (Exception e) { return false; }
     }
 
     private String get(String url) {

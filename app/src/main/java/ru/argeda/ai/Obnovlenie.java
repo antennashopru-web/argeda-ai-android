@@ -3,6 +3,7 @@ package ru.argeda.ai;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.app.PendingIntent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
@@ -115,10 +116,44 @@ class Obnovlenie {
             return;
         }
         sp.edit().putBoolean("pending", false).apply();
+        if (Build.VERSION.SDK_INT >= 26 && cherezSessiyu(readyApk)) return;
         Uri u = CameraFileProvider.uriFor("update", readyApk);
         Intent i = new Intent(Intent.ACTION_VIEW).setDataAndType(u, "application/vnd.android.package-archive")
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
         try { a.startActivity(i); } catch (Exception e) { Toast.makeText(a, "Не удалось запустить установку", Toast.LENGTH_SHORT).show(); }
+    }
+
+    /**
+     * Android's own package installer session. On Android 12+ an app updating itself may skip the
+     * "Update this app?" screen (USER_ACTION_NOT_REQUIRED); if the system still wants a tap,
+     * UstanovkaPriemnik shows its screen. Any failure falls back to the classic installer screen.
+     */
+    private boolean cherezSessiyu(File apk) {
+        android.content.pm.PackageInstaller.Session s = null;
+        try {
+            android.content.pm.PackageInstaller pi = a.getPackageManager().getPackageInstaller();
+            android.content.pm.PackageInstaller.SessionParams p =
+                    new android.content.pm.PackageInstaller.SessionParams(android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+            p.setAppPackageName(a.getPackageName());
+            p.setSize(apk.length());
+            if (Build.VERSION.SDK_INT >= 31) p.setRequireUserAction(android.content.pm.PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+            int id = pi.createSession(p);
+            s = pi.openSession(id);
+            try (java.io.OutputStream out = s.openWrite("argeda.apk", 0, apk.length()); InputStream in = new java.io.FileInputStream(apk)) {
+                byte[] b = new byte[65536]; int n;
+                while ((n = in.read(b)) > 0) out.write(b, 0, n);
+                s.fsync(out);
+            }
+            Intent cb = new Intent(a, UstanovkaPriemnik.class).setAction(UstanovkaPriemnik.ACTION);
+            int fl = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+            s.commit(PendingIntent.getBroadcast(a, id, cb, fl).getIntentSender());
+            s.close();
+            Toast.makeText(a, "Устанавливаю обновление…", Toast.LENGTH_SHORT).show();
+            return true;
+        } catch (Exception e) {
+            try { if (s != null) s.abandon(); } catch (Exception ignored) {}
+            return false;
+        }
     }
 
     /** After returning from the "unknown sources" settings screen. */

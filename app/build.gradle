@@ -1,4 +1,7 @@
-plugins { id 'com.android.application' }
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
 
 def ksProps = new Properties()
 def ksFile = rootProject.file('signing.properties')
@@ -11,8 +14,8 @@ android {
         applicationId 'ru.argeda.ai'
         minSdk 24
         targetSdk 35
-        versionCode 37
-        versionName "4.6"
+        versionCode 38
+        versionName "4.7"
     }
     signingConfigs {
         release {
@@ -37,5 +40,6 @@ android {
     }
     lint { checkReleaseBuilds false; abortOnError false }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    kotlinOptions { jvmTarget = '17' }
 }
 

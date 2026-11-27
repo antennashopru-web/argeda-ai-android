@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -18,6 +19,8 @@ import android.widget.Toast
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Offline shell: the app's own screen (assets/karkas/index.html) shown when the site does not answer.
@@ -207,7 +210,90 @@ class Karkas(private val a: MainActivity, val view: WebView) {
 
     // ---------- bridge for the shell page ----------
 
+    // ---------- «Мои тексты» песен: общие с сайтом (/muzyka/api/teksty, вход по cookie сайта) ----------
+
+    private fun zaprosTeksty(metod: String, put: String, telo: JSONObject?): Pair<Int, String> {
+        val c = URL("https://$HOST/muzyka/api/teksty$put").openConnection() as HttpURLConnection
+        try {
+            c.requestMethod = metod; c.connectTimeout = 8000; c.readTimeout = 10000
+            c.setRequestProperty("Accept", "application/json")
+            CookieManager.getInstance().getCookie("https://$HOST/")?.let { c.setRequestProperty("Cookie", it) }
+            c.setRequestProperty("User-Agent", "ArgedaApp/" + (try { a.packageManager.getPackageInfo(a.packageName, 0).versionName } catch (e: Exception) { "" }))
+            if (telo != null) {
+                c.doOutput = true; c.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                c.outputStream.use { it.write(telo.toString().toByteArray(Charsets.UTF_8)) }
+            }
+            val kod = c.responseCode
+            val txt = try { (if (kod < 400) c.inputStream else c.errorStream)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: "" } catch (e: Exception) { "" }
+            return Pair(kod, txt)
+        } finally { c.disconnect() }
+    }
+
+    /** Any reasonable answer shape -> [{id,nazv,tekst,stil}] */
+    private fun spisokTekstov(txt: String): JSONArray {
+        val out = JSONArray()
+        val arr: JSONArray? = try {
+            val t = txt.trim()
+            if (t.startsWith("[")) JSONArray(t) else {
+                val o = JSONObject(t)
+                fun najti(x: JSONObject): JSONArray? {
+                    for (k in arrayOf("teksty", "spisok", "items", "data", "rows")) {
+                        x.optJSONArray(k)?.let { return it }
+                        x.optJSONObject(k)?.let { v -> najti(v)?.let { return it } }
+                    }
+                    return null
+                }
+                najti(o)
+            }
+        } catch (e: Exception) { null }
+        if (arr == null) return out
+        fun pole(x: JSONObject, vararg k: String): String { for (n in k) { val v = x.optString(n, ""); if (v.isNotEmpty() && v != "null") return v }; return "" }
+        for (i in 0 until arr.length()) {
+            val x = arr.optJSONObject(i) ?: continue
+            val id = pole(x, "id", "tekstId", "tekst_id")
+            if (id.isEmpty()) continue
+            out.put(JSONObject().put("id", id).put("nazv", pole(x, "nazv", "nazvanie", "title", "name"))
+                .put("tekst", pole(x, "tekst", "text", "lyrics", "soderzhanie")).put("stil", pole(x, "stil", "style")))
+        }
+        return out
+    }
+
+    private fun jsOtvet(fn: String, vararg args: String) {
+        h.post { try { view.evaluateJavascript("window.$fn&&window.$fn(" + args.joinToString(",") + ")", null) } catch (ignored: Exception) {} }
+    }
+
     private inner class Most {
+        /** Texts saved on the site by this account; answer comes to window.mzTekstySayt(list|null). */
+        @JavascriptInterface fun tekstySayt() {
+            Thread {
+                try {
+                    val (kod, txt) = zaprosTeksty("GET", "", null)
+                    jsOtvet("mzTekstySayt", if (kod == 200) spisokTekstov(txt).toString() else "null")
+                } catch (e: Exception) { jsOtvet("mzTekstySayt", "null") }
+            }.start()
+        }
+
+        /** Save one text on the site too: a new one (saytId empty) or a new version of an existing one. */
+        @JavascriptInterface fun tekstNaSayt(lokId: String?, saytId: String?, nazv: String?, tekst: String?, stil: String?) {
+            if (lokId == null || tekst.isNullOrEmpty()) return
+            Thread {
+                var id: String? = null
+                try {
+                    val t = JSONObject().put("nazv", nazv ?: "").put("nazvanie", nazv ?: "").put("title", nazv ?: "")
+                        .put("tekst", tekst).put("text", tekst).put("stil", stil ?: "").put("style", stil ?: "")
+                    val (kod, txt) = if (saytId.isNullOrEmpty()) zaprosTeksty("POST", "", t)
+                                     else zaprosTeksty("PUT", "/" + Uri.encode(saytId), t)
+                    if (kod in 200..299) {
+                        id = saytId?.takeIf { it.isNotEmpty() } ?: try {
+                            val o = JSONObject(txt)
+                            o.optString("id").ifEmpty { o.optJSONObject("tekst")?.optString("id") ?: o.optJSONObject("data")?.optString("id") ?: "" }
+                        } catch (e: Exception) { "" }
+                    }
+                } catch (ignored: Exception) {}
+                jsOtvet("mzTekstSaytOtvet", JSONObject.quote(lokId), if (id.isNullOrEmpty()) "null" else JSONObject.quote(id))
+            }.start()
+        }
+
         @JavascriptInterface fun fayly(): String = prefs.getString("fayly", "[]") ?: "[]"
         @JavascriptInterface fun stranitsy(): String = prefs.getString("stranitsy", "[]") ?: "[]"
         @JavascriptInterface fun set(): Boolean = estSet(a)

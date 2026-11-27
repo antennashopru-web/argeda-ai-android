@@ -98,6 +98,7 @@ class MainActivity : Activity() {
     }
 
     private lateinit var web: WebView
+    private var pryamoy: Pryamoy? = null
     private lateinit var progress: ProgressBar
     private lateinit var karkas: Karkas
     private var fileCallback: ValueCallback<Array<Uri>>? = null
@@ -333,7 +334,7 @@ class MainActivity : Activity() {
         web = findViewById(R.id.web)
         progress = findViewById(R.id.progress)
         karkas = Karkas(this, offline)
-        Pryamoy(this, offline)
+        pryamoy = Pryamoy(this, offline)
         offline.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(w: WebView, cb: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                 fileCallback?.onReceiveValue(null)
@@ -952,10 +953,10 @@ class MainActivity : Activity() {
         web.saveState(out)
     }
 
-    override fun onPause() { super.onPause(); CookieManager.getInstance().flush() }
+    override fun onPause() { super.onPause(); CookieManager.getInstance().flush(); pryamoy?.fon(true) }
 
     override fun onResume() {
-        super.onResume(); PleerService.ui = this
+        super.onResume(); PleerService.ui = this; pryamoy?.fon(false)
         obnovlenie?.let { it.posleNastroek(); it.proverit(false) }
     }
 

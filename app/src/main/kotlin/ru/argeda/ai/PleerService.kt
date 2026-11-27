@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.graphics.drawable.Icon
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaSession
@@ -40,6 +41,10 @@ class PleerService : Service() {
 
         @Volatile @JvmStatic var ui: MainActivity? = null
         @Volatile @JvmStatic var playing = false
+        /** The service is in the foreground now: a new start must not go through startForegroundService from the background. */
+        @Volatile @JvmStatic var vPerednem = false
+        /** How long a paused song keeps the controls in the foreground (next track, buffering, a short break). */
+        private const val DERZHAT_PAUZU_MS = 10 * 60 * 1000L
 
         fun send(c: Context, action: String, title: String?, posMs: Int, durMs: Int) {
             if (Build.VERSION.SDK_INT < 26) return // Android 7: no channels / foreground start API; the page plays on its own
@@ -47,7 +52,7 @@ class PleerService : Service() {
             if (title != null) i.putExtra("title", title)
             i.putExtra("pos", posMs).putExtra("dur", durMs)
             try {
-                if (A_PLAY == action) c.startForegroundService(i) else c.startService(i)
+                if (A_PLAY == action && !vPerednem) c.startForegroundService(i) else c.startService(i)
             } catch (ignored: Exception) { /* background start limits: the page keeps playing anyway */ }
         }
     }
@@ -136,6 +141,7 @@ class PleerService : Service() {
 
     @Suppress("DEPRECATION")
     private fun stopForegroundCompat(remove: Boolean) {
+        vPerednem = false
         if (Build.VERSION.SDK_INT >= 24) stopForeground(if (remove) STOP_FOREGROUND_REMOVE else STOP_FOREGROUND_DETACH)
         else stopForeground(remove)
     }
@@ -168,25 +174,35 @@ class PleerService : Service() {
             .setContentTitle(title).setContentText("ARGEDA AI")
             .setContentIntent(openPi).setDeleteIntent(pi(A_STOP_TIHO, 5)).setOngoing(playing).setOnlyAlertOnce(true)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .addAction(Notification.Action.Builder(null, "Назад", pi(A_PREV, 3)).build())
-            .addAction(Notification.Action.Builder(null, if (playing) "Пауза" else "Играть", pi(A_TOGGLE, 1)).build())
-            .addAction(Notification.Action.Builder(null, "Дальше", pi(A_NEXT, 4)).build())
-            .addAction(Notification.Action.Builder(null, "Закрыть", pi(A_STOP, 2)).build())
+            .addAction(knopka(R.drawable.ic_pl_prev, "Предыдущая", pi(A_PREV, 3)))
+            .addAction(knopka(if (playing) R.drawable.ic_pl_pause else R.drawable.ic_pl_play, if (playing) "Пауза" else "Играть", pi(A_TOGGLE, 1)))
+            .addAction(knopka(R.drawable.ic_pl_next, "Следующая", pi(A_NEXT, 4)))
+            .addAction(knopka(R.drawable.ic_pl_close, "Закрыть", pi(A_STOP, 2)))
             .setStyle(Notification.MediaStyle().setMediaSession(s.sessionToken).setShowActionsInCompactView(0, 1, 2))
             .build()
         try {
             if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             else startForeground(NOTIF_ID, n)
+            vPerednem = true
         } catch (e: Exception) { // not allowed from the background: at least update the notification
             try { getSystemService(NotificationManager::class.java).notify(NOTIF_ID, n) } catch (ignored: Exception) {}
         }
         h.removeCallbacks(otpustit)
         if (playing) zamki(true)
-        else h.post(otpustit) // paused: notification stays but can be swiped away, process may sleep
+        else {
+            // paused: no wake/wifi locks, but the controls stay in the foreground for a while, so the next song
+            // or «Играть» from the shade starts again on Android 12+; after that the notification can be swiped away
+            zamki(false)
+            h.postDelayed(otpustit, DERZHAT_PAUZU_MS)
+        }
     }
 
+    /** MediaStyle shows actions as icons only: without an icon the button is an empty square. */
+    private fun knopka(ikonka: Int, tekst: String, p: PendingIntent): Notification.Action =
+        Notification.Action.Builder(Icon.createWithResource(this, ikonka), tekst, p).build()
+
     override fun onDestroy() {
-        playing = false; h.removeCallbacks(otpustit); zamki(false)
+        playing = false; vPerednem = false; h.removeCallbacks(otpustit); zamki(false)
         session?.let { it.isActive = false; it.release() }
         super.onDestroy()
     }

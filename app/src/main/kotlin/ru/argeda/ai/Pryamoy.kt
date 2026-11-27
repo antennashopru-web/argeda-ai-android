@@ -379,12 +379,20 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
 
         /** Any catalog model: body {model, input} built on the page from the model's schema. */
         @JavascriptInterface fun zapuskModel(model: String?, inputJson: String?, nazv: String?, tip: String?, prompt: String?) {
+            zapuskModelForma(model, inputJson, nazv, tip, prompt, null)
+        }
+
+        /** Same, plus the form as the person filled it: «Повторить» puts it back for a new run. */
+        @JavascriptInterface fun zapuskModelForma(model: String?, inputJson: String?, nazv: String?, tip: String?, prompt: String?, formaJson: String?) {
             a.runOnUiThread { a.askNotifications() } // to say «Песня готова» when the app is in the background
             bg.execute {
                 val x = JSONObject()
                 try {
+                    val inp = JSONObject(inputJson ?: "")
                     x.put("tip", tip).put("nazv", nazv).put("prompt", prompt ?: "").put("t", System.currentTimeMillis())
-                    sozdat(x, JSONObject().put("model", model).put("input", JSONObject(inputJson ?: "")))
+                        .put("model", model ?: "").put("vhod", inp)
+                    if (!formaJson.isNullOrEmpty()) try { x.put("forma", JSONObject(formaJson)) } catch (ignored: Exception) {}
+                    sozdat(x, JSONObject().put("model", model).put("input", inp))
                 } catch (e: Exception) {
                     try { x.put("id", "err-" + System.currentTimeMillis()).put("st", "oshibka").put("msg", chisto(e)) } catch (ignored: Exception) {}
                     dobavit(x)

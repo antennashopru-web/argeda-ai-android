@@ -288,7 +288,13 @@ class MainActivity : Activity() {
                 val did = dm0.addCompletedDownload(name, name, true, mime, f.absolutePath, f.length(), true)
                 karkas.zapisatFayl(dm0.getUriForDownloadedFile(did), mime, name)
             }
-            val where = if (mime.startsWith("image/") || mime.startsWith("video/")) "в галерею (ARGEDA AI)" else "в Загрузки / ARGEDA AI"
+            // the place must match where the file really went (Android 7–9 keeps everything in «Загрузки»)
+            val where = when {
+                Build.VERSION.SDK_INT < 29 -> "в Загрузки / ARGEDA AI"
+                mime.startsWith("image/") || mime.startsWith("video/") -> "в галерею (ARGEDA AI)"
+                mime.startsWith("audio/") -> "в Музыку / ARGEDA AI"
+                else -> "в Загрузки / ARGEDA AI"
+            }
             Toast.makeText(this, "Сохранено $where: $name", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Не удалось сохранить файл", Toast.LENGTH_SHORT).show()
@@ -413,6 +419,8 @@ class MainActivity : Activity() {
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
+                // camera and microphone only for our own site, never for a foreign page opened inside
+                if (HOST != request.origin?.host) { request.deny(); return }
                 val need = ArrayList<String>()
                 for (r in request.resources) {
                     if (PermissionRequest.RESOURCE_VIDEO_CAPTURE == r) need.add(Manifest.permission.CAMERA)
@@ -511,7 +519,9 @@ class MainActivity : Activity() {
         s.setSupportMultipleWindows(true)
         s.javaScriptCanOpenWindowsAutomatically = true
         s.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-        s.userAgentString = s.userAgentString + " ArgedaApp/4.7"
+        // version from the installed package: no manual edit on each release
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+        s.userAgentString = s.userAgentString + " ArgedaApp/" + ver
         val cm = CookieManager.getInstance()
         cm.setAcceptCookie(true)
         cm.setAcceptThirdPartyCookies(w, true)
@@ -719,7 +729,8 @@ class MainActivity : Activity() {
                 owner.evaluateJavascript(js, null)
                 return
             }
-            val m = mime ?: ""
+            val m = mime?.takeIf { it.isNotEmpty() && it != "application/octet-stream" }
+                ?: mimeForExtension(name.substringAfterLast('.', "").lowercase()) ?: (mime ?: "")
             val r = DownloadManager.Request(Uri.parse(url))
             if (m.isNotEmpty()) r.setMimeType(m)
             r.addRequestHeader("User-Agent", ua)
@@ -730,6 +741,7 @@ class MainActivity : Activity() {
             val dir = when {
                 m.startsWith("image/") -> Environment.DIRECTORY_PICTURES
                 m.startsWith("video/") -> Environment.DIRECTORY_MOVIES
+                m.startsWith("audio/") -> Environment.DIRECTORY_MUSIC
                 else -> Environment.DIRECTORY_DOWNLOADS
             }
             r.setDestinationInExternalPublicDir(dir, "ARGEDA AI/$name")
@@ -741,14 +753,22 @@ class MainActivity : Activity() {
             val doc = ml.contains("pdf") || nl.endsWith(".pdf") || ml.contains("msword") || ml.contains("officedocument") || ml.contains("ms-excel") ||
                     ml.contains("android.package-archive") || nl.endsWith(".apk")
             if (doc) openWhenDone.add(id)
-            Toast.makeText(this, if (doc) "Открываю документ…" else getString(R.string.download_started), Toast.LENGTH_SHORT).show()
+            val kuda = when (dir) {
+                Environment.DIRECTORY_MUSIC -> "Песня скачивается в папку «Музыка / ARGEDA AI»"
+                Environment.DIRECTORY_PICTURES -> "Картинка скачивается в «Галерею»"
+                Environment.DIRECTORY_MOVIES -> "Видео скачивается в «Галерею»"
+                else -> getString(R.string.download_started)
+            }
+            Toast.makeText(this, if (doc) "Открываю документ…" else kuda, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             openExternal(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
     }
 
     private fun openFileChooser(params: WebChromeClient.FileChooserParams) {
-        if (!cameraAsked && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED &&
+        // a song or a document is being picked: no camera question and no «take a photo» in the list
+        val nuzhnaKamera = fotoPodhodit(params)
+        if (nuzhnaKamera && !cameraAsked && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED &&
             packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             cameraAsked = true
             pendingChooser = params
@@ -777,7 +797,7 @@ class MainActivity : Activity() {
 
         val chooser = Intent.createChooser(pick, getString(R.string.choose_file))
         val extras = ArrayList<Intent>()
-        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+        if (nuzhnaKamera && checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
             packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             try {
                 val dir = File(cacheDir, "camera"); dir.mkdirs()
@@ -795,6 +815,14 @@ class MainActivity : Activity() {
             @Suppress("DEPRECATION")
             startActivityForResult(chooser, RC_FILE)
         } catch (e: ActivityNotFoundException) { fileCallback?.onReceiveValue(null); fileCallback = null }
+    }
+
+    /** true when the page accepts any file or a picture (accept is empty, image/..., .jpg, ...). */
+    private fun fotoPodhodit(params: WebChromeClient.FileChooserParams): Boolean {
+        val chasti = (params.acceptTypes ?: emptyArray()).filterNotNull()
+            .flatMap { it.split(",") }.map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+        if (chasti.isEmpty()) return true
+        return chasti.any { t -> t == "*/*" || t.startsWith("image/") || (mimeForExtension(t)?.startsWith("image/") ?: false) }
     }
 
     @Deprecated("Activity result API is not used here: the app has no androidx")
@@ -906,12 +934,17 @@ class MainActivity : Activity() {
             // inside the own screens: step back to «Главная» first, then leave the app
             karkas.view.evaluateJavascript("window.karkasNazad?window.karkasNazad():'net'") { r ->
                 if (r != null && r.contains("ok")) return@evaluateJavascript
-                if (karkas.zakrep && stranitsaGotova && !loadFailed) karkas.skrytVsegda() else finish()
+                if (karkas.zakrep && stranitsaGotova && !loadFailed) karkas.skrytVsegda() else vyyti()
             }
             return
         }
         @Suppress("DEPRECATION")
-        if (web.canGoBack()) web.goBack() else super.onBackPressed()
+        if (web.canGoBack()) web.goBack() else vyyti()
+    }
+
+    /** Leaving with «Назад»: while a song plays, only hide the app, so the music keeps going. */
+    private fun vyyti() {
+        if (PleerService.playing) moveTaskToBack(true) else finish()
     }
 
     override fun onSaveInstanceState(out: Bundle) {

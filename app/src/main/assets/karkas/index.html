@@ -771,7 +771,8 @@ var MZ_ZHEN={'Поп':'pop','Рок':'rock','Рэп':'rap, hip-hop','Шансо�
 var MZ_NEN={'Весёлое':'upbeat, happy','Лирическое':'lyrical, warm','Грустное':'sad, melancholic','Романтичное':'romantic','Торжественное':'anthemic, festive','Энергичное':'energetic, driving','Спокойное':'calm, chill'};
 function mzChips(f,list,lbl){ return '<div class="chips mzc">'+list.map(function(v,i){ var val=Array.isArray(v)?v[0]:v, t=Array.isArray(v)?v[1]:v; return '<button data-act="mz-v" data-mf="'+f+'" data-v="'+esc(val)+'" class="'+(MZ[f]===val?'on':'')+'">'+esc(t)+'</button>'; }).join('')+'</div>'; }
 function mzGolosChips(){ return mzChips('golos',[['','Авто'],['m','Мужской'],['f','Женский']]); }
-function mzStilAvto(){ var s=[MZ_ZHEN[MZ.zhanr]||'',MZ_NEN[MZ.nastr]||''].filter(Boolean).join(', '); if(MZ.yazyk==='Русский') s+=(s?', ':'')+'russian vocals'; else if(MZ.yazyk==='Армянский') s+=(s?', ':'')+'armenian vocals'; return s; }
+function mzStilAvto(){ var s=[MZ_ZHEN[MZ.zhanr]||'',MZ_NEN[MZ.nastr]||''].filter(Boolean).join(', '); var yz=MZ_YZT[MZ.yazyk]; if(yz) s+=(s?', ':'')+yz; return s; }
+var MZ_YZT={'Русский':'russian vocals','Английский':'english vocals','Армянский':'armenian vocals'};
 function mzMoiTeksty(){
   var a=mzTeksty();
   return '<details class="mzd" data-dk="otkrytTeksty"'+(MZ.otkrytTeksty?' open':'')+'><summary>Мои тексты'+(a.length?' ('+a.length+')':'')+'</summary>'
@@ -940,16 +941,12 @@ function mzOp(){
     if(MZ.stil.trim()) inp.style=MZ.stil.trim().slice(0,1000);
     nm='Продление: '+nazv; kak='Продлить песню';
   }
-  sprosit(kak+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего ключа.', function(){
+  sprosit(kak+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего счёта сервиса.', function(){
     P.zapuskModel(model, JSON.stringify(inp), nm, 'muzyka', nazv);
     toast('Запущено. Будет готово через пару минут'); setTimeout(function(){ redraw(); var e=document.getElementById('mz-moya'); if(e) e.scrollIntoView({behavior:'smooth'}); },300);
   });
 }
-function mzKartaTrekov(x){
-  var h=pzKarta(x); return h;
-  if(x.st==='gotovo'&&x.treki&&x.treki.length) h+='<div class="mzop">'+x.treki.map(function(t,i){ var a=' data-tid="'+esc(x.id)+'" data-aid="'+esc(t.id)+'" data-dur="'+(t.dur||0)+'" data-nm="'+esc(t.title||x.nazv||'Песня')+'"'; return '<div><span>Вариант '+(i+1)+'</span><button data-act="mz-ist" data-op="prodlit"'+a+'>Продлить</button><button data-act="mz-ist" data-op="kaver"'+a+'>Кавер</button></div>'; }).join('')+'</div>';
-  return h;
-}
+function mzKartaTrekov(x){ return pzKarta(x); } /* «Продлить» и «Кавер» у каждого варианта рисует plTrekHtml */
 
 function mzSochinit(){
   if(!MZ.ideya.trim() && MZ.shag===1){ toast('Напишите, о чём песня'); return; }
@@ -968,14 +965,14 @@ function mzOtvet(t,err){
   MZ.shag=2; mzSohr(); toast('Текст готов — можно поправить'); if(cur==='razdel'&&curK==='muzyka') redraw();
 }
 function mzPesnya(){
-  var minus=MZ.tab==='minus', stil=(zvStil()||mzStilAvto()).trim(); if(!minus&&MZ.yazyk==='Русский'&&stil.indexOf('russian')<0) stil+=', russian vocals';
-  if(minus){ var zs=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}).map(function(y){return y.s}).join(', ')||(MZ.zvTab==='svoy'?(MZ.stil||'').trim():''); stil=[MZ.minus.trim(),zs||mzStilAvto().replace(/(, )?(russian|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental, no vocals'; if(stil===', instrumental, no vocals'){ toast('Опишите, какая музыка нужна или выберите звучание'); return; } }
+  var minus=MZ.tab==='minus', stil=(zvStil()||mzStilAvto()).trim(); var yzt=MZ_YZT[MZ.yazyk]; if(!minus&&yzt&&stil.indexOf(yzt)<0) stil+=(stil?', ':'')+yzt;
+  if(minus){ var zs=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}).map(function(y){return y.s}).join(', ')||(MZ.zvTab==='svoy'?(MZ.stil||'').trim():''); stil=[MZ.minus.trim(),zs||mzStilAvto().replace(/(, )?(russian|english|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental, no vocals'; if(stil===', instrumental, no vocals'){ toast('Опишите, какая музыка нужна или выберите звучание'); return; } }
   else if(!MZ.tekst.trim()){ toast('Нет текста песни'); return; }
   if(!stil) stil='pop';
   var nazv=((minus?MZ.mNazv:MZ.nazv)||(minus?'Минусовка':'Песня')).slice(0,80);
   var inp={custom_mode:true, instrumental:minus, model:MZ.versiya||'V6', title:nazv, style:stil.slice(0,1000)};
   if(!minus){ inp.lyrics=MZ.tekst.slice(0,5000); if(MZ.golos) inp.vocal_gender=MZ.golos; }
-  sprosit((minus?'Создать минусовку':'Создать песню')+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего ключа.', function(){
+  sprosit((minus?'Создать минусовку':'Создать песню')+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего счёта сервиса.', function(){
     P.zapuskModel('ai-music-api/generate', JSON.stringify(inp), (minus?'Минусовка: ':'Песня: ')+nazv, 'muzyka', minus?MZ.minus:nazv);
     toast('Запущено. Песня будет готова через пару минут'); setTimeout(function(){ redraw(); var e=document.getElementById('mz-moya'); if(e) e.scrollIntoView({behavior:'smooth'}); },300);
   });

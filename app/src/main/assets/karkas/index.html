@@ -1013,9 +1013,14 @@ function mzParametry(x,y){
   var tx=v.lyrics||(y&&y.tekst)||'';
   return (h.length||tx)?'<details class="mzd mzpar"><summary>Текст и параметры</summary>'+h.join('')+(tx?'<div class="pltx">'+esc(tx).replace(/\n/g,'<br>')+'</div>':'')+'</details>':'';
 }
+/* язык по буквам текста: армянские → армянский, кириллица → русский, латиница → английский */
+function mzYazykPoTekstu(t){ t=String(t||'').replace(/\[[^\]]*\]/g,''); var hy=(t.match(/[\u0531-\u0587]/g)||[]).length, ru=(t.match(/[\u0400-\u04FF]/g)||[]).length, en=(t.match(/[A-Za-z]/g)||[]).length;
+  if(!hy&&!ru&&!en) return ''; return hy>=ru&&hy>=en?'Армянский':ru>=en?'Русский':'Английский'; }
 function mzPovtorit(id, aid){
   var x=mzZadacha(id); if(!x){ toast('Песня не найдена'); return; }
   var v=x.vhod||{}, f=x.forma, y=(x.treki||[]).filter(function(t){return t.id===aid})[0]||(x.treki||[])[0]||{};
+  /* сначала сбрасываем то, что осталось от прошлых песен: подставляем только известное про эту */
+  MZ.zhanr=''; MZ.nastr=''; MZ.zvSel=[]; MZ.zvTab='zhanry'; MZ.stil=''; MZ.golos=''; MZ.ideya='';
   if(f){ MZ_FORMA.forEach(function(k){ if(f[k]!==undefined) MZ[k]=f[k]; }); if(MZ.tab==='sochinit') MZ.shag=MZ.tekst?3:1; }
   else { /* старые песни: собираем форму из того, с чем запускали */
     var minus=v.instrumental===true||/^Минусовка/.test(x.nazv||'');
@@ -1023,6 +1028,7 @@ function mzPovtorit(id, aid){
     if(minus){ MZ.minus=(v.style||y.stil||'').replace(/, ?instrumental, no vocals$/,''); MZ.mNazv=v.title||''; }
     else { MZ.tekst=v.lyrics||y.tekst||''; MZ.nazv=v.title||y.title||''; MZ.zvTab='svoy'; MZ.zvSel=[]; MZ.stil=v.style||y.stil||''; }
   }
+  if(!f||!f.yazyk){ var yz=mzYazykPoTekstu(MZ.tekst||v.lyrics||y.tekst||y.title||x.nazv); if(yz) MZ.yazyk=yz; }
   MZ.tid=null; mzSohr(); PL.polnyy=false; plRis(); show('razdel','muzyka'); window.scrollTo(0,0);
   toast('Всё как в той песне — поменяйте что нужно и нажмите «Создать»');
 }

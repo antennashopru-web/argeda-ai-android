@@ -413,6 +413,8 @@ class MainActivity : Activity() {
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
+                // camera and microphone only for our own site, never for a foreign page opened inside
+                if (HOST != request.origin?.host) { request.deny(); return }
                 val need = ArrayList<String>()
                 for (r in request.resources) {
                     if (PermissionRequest.RESOURCE_VIDEO_CAPTURE == r) need.add(Manifest.permission.CAMERA)
@@ -511,7 +513,9 @@ class MainActivity : Activity() {
         s.setSupportMultipleWindows(true)
         s.javaScriptCanOpenWindowsAutomatically = true
         s.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-        s.userAgentString = s.userAgentString + " ArgedaApp/4.7"
+        // version from the installed package: no manual edit on each release
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+        s.userAgentString = s.userAgentString + " ArgedaApp/" + ver
         val cm = CookieManager.getInstance()
         cm.setAcceptCookie(true)
         cm.setAcceptThirdPartyCookies(w, true)

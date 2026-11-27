@@ -807,7 +807,7 @@ function zvBlok(){
 function zvKlik(d){
   if(d.act==='zv-tab'){ MZ.zvTab=d.v; MZ.zvQ=''; mzSohr(); redraw(); return true; }
   if(d.act==='zv-v'){ var x=ZV[d.k][+d.i], id=d.k+d.i, sel=zvVybrano().slice(), j=-1; sel.forEach(function(y,n){ if(y.id===id) j=n; });
-    if(j>=0) sel.splice(j,1); else { if(d.k==='vokal') sel=sel.filter(function(y){return y.id.indexOf('vokal')!==0}); sel.push({id:id,n:x[0],s:x[2]}); if(sel.length>4) sel.shift(); }
+    if(j>=0) sel.splice(j,1); else { if(d.k==='vokal'){ sel=sel.filter(function(y){return y.id.indexOf('vokal')!==0}); MZ.golos=/^Женск|^Детск/.test(x[0])?'f':/^Мужск/.test(x[0])?'m':''; } sel.push({id:id,n:x[0],s:x[2]}); if(sel.length>4) sel.shift(); }
     MZ.zvSel=sel; if(MZ.zvTab==='svoy') MZ.zvTab='zhanry'; mzSohr(); redraw(); return true; }
   if(d.act==='zv-x'){ MZ.zvSel=zvVybrano().filter(function(y){return y.id!==d.id}); mzSohr(); redraw(); return true; }
   return false;
@@ -981,7 +981,7 @@ function mzKlik(d){
   var a=d.act;
   if(a==='mz-tab'){ MZ.tab=d.v; mzSohr(); redraw(); return true; }
   if(a==='mz-shag'){ var s=+d.v; if(s>1&&!MZ.tekst){ toast('Сначала сочините текст'); return true; } MZ.shag=s; mzSohr(); redraw(); return true; }
-  if(a==='mz-v'){ var mf=d.mf; MZ[mf]=(MZ[mf]===d.v&&mf!=='versiya'&&mf!=='yazyk'&&mf!=='golos')?'':d.v; if(mf==='zhanr'||mf==='nastr'||mf==='yazyk') MZ.stil=''; mzSohr(); redraw(); return true; }
+  if(a==='mz-v'){ var mf=d.mf; MZ[mf]=(MZ[mf]===d.v&&mf!=='versiya'&&mf!=='yazyk'&&mf!=='golos')?'':d.v; if(mf==='zhanr'||mf==='nastr'||mf==='yazyk') MZ.stil=''; if(mf==='golos') MZ.zvSel=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}); /* голос выбирается в одном месте: «Кто поёт» снимает чип из «Вокала» */ mzSohr(); redraw(); return true; }
   if(a==='mz-sochinit'){ mzSochinit(); return true; }
   if(a==='mz-op'){ mzOp(); return true; }
   if(a==='mz-f'){ MZ.fF=d.v; mzSohr(); redraw(); return true; }

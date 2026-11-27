@@ -1,6 +1,14 @@
 package ru.argeda.ai
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -269,6 +277,74 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
         dobavit(x)
     }
 
+
+    private val gotovye = ArrayList<String>()
+    private val h = Handler(Looper.getMainLooper())
+    @Volatile private var vFone = false
+
+    /** One pass over unfinished tasks (from the page or from the background loop). */
+    private fun proveritVse() {
+        bg.execute {
+            gotovye.clear()
+                var izm = false
+                val z = this@Pryamoy.zadachi()
+                for (i in 0 until z.length()) {
+                    val x = z.optJSONObject(i)
+                    if (x == null || x.optString("st") != "idet") continue
+                    try {
+                        val d = zapros("GET", "recordInfo?taskId=" + x.optString("id"), null).optJSONObject("data") ?: continue
+                        val s = d.optString("state", "")
+                        if (s == "success") {
+                            val u = ssylki(d)
+                            x.put("st", if (u.length() > 0) "gotovo" else "oshibka").put("urls", u)
+                            if (u.length() > 0) gotovye.add(x.optString("nazv", ""))
+                            val tk = JSONArray()
+                            try { treki(JSONObject(d.optString("resultJson", "{}")), tk, 0) } catch (ignored: Exception) {}
+                            if (tk.length() > 0) x.put("treki", tk)
+                            if (u.length() == 0) x.put("msg", "Готово, но файла в ответе нет")
+                            izm = true
+                        } else if (s == "fail") {
+                            val m = d.optString("failMsg", "")
+                            x.put("st", "oshibka").put("msg", if (m.isEmpty()) "Не получилось, кредиты не списаны" else chisto(m))
+                            izm = true
+                        } else if (System.currentTimeMillis() - x.optLong("t") > 30 * 60_000L) {
+                            x.put("st", "oshibka").put("msg", "Нет ответа 30 минут"); izm = true
+                        }
+                    } catch (e: Exception) {
+                        if (e.message.toString().startsWith("Ключ")) {
+                            try { x.put("st", "oshibka").put("msg", e.message); izm = true } catch (ignored: Exception) {}
+                        }
+                    }
+                }
+                if (izm) { synchronized(lock) { sohranitZadachi(z) }; js("pryamoyObnovit") }
+            if (vFone) for (n in gotovye) uvedomit(n)
+        }
+    }
+
+    private fun estIdut(): Boolean { val z = zadachi(); for (i in 0 until z.length()) if (z.optJSONObject(i)?.optString("st") == "idet") return true; return false }
+
+    /** The app went to the background: keep checking every 20 s while something is being made, then tell with a notification. */
+    private val fonShag = object : Runnable { override fun run() { if (!vFone || !estIdut()) return; proveritVse(); h.postDelayed(this, 20_000L) } }
+    fun fon(on: Boolean) { vFone = on; h.removeCallbacks(fonShag); if (on) h.postDelayed(fonShag, 20_000L) }
+
+    private fun uvedomit(nazv: String) {
+        try {
+            val nm = a.getSystemService(NotificationManager::class.java)
+            if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel("gotovo") == null)
+                nm.createNotificationChannel(NotificationChannel("gotovo", "Готовые работы", NotificationManager.IMPORTANCE_DEFAULT))
+            val open = Intent(a, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            val pi = PendingIntent.getActivity(a, 11, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val muz = nazv.startsWith("Песня") || nazv.startsWith("Минусовка") || nazv.startsWith("Кавер") || nazv.startsWith("Продление") || nazv.startsWith("Вокал")
+            @Suppress("DEPRECATION")
+            val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(a, "gotovo") else Notification.Builder(a)
+            val n = b.setSmallIcon(R.drawable.ic_nota)
+                .setContentTitle(if (muz) "Песня готова" else "Готово")
+                .setContentText(if (nazv.isEmpty()) "Откройте приложение" else nazv)
+                .setContentIntent(pi).setAutoCancel(true).build()
+            nm.notify(100 + (nazv.hashCode() and 0xffff), n)
+        } catch (ignored: Exception) {}
+    }
+
     private inner class Most {
         @JavascriptInterface fun est(): Boolean = p.getString("k", null) != null
 
@@ -299,43 +375,11 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
         }
 
         /** Polls unfinished tasks once; the page calls it every few seconds while it is open. */
-        @JavascriptInterface fun proverit() {
-            bg.execute {
-                var izm = false
-                val z = this@Pryamoy.zadachi()
-                for (i in 0 until z.length()) {
-                    val x = z.optJSONObject(i)
-                    if (x == null || x.optString("st") != "idet") continue
-                    try {
-                        val d = zapros("GET", "recordInfo?taskId=" + x.optString("id"), null).optJSONObject("data") ?: continue
-                        val s = d.optString("state", "")
-                        if (s == "success") {
-                            val u = ssylki(d)
-                            x.put("st", if (u.length() > 0) "gotovo" else "oshibka").put("urls", u)
-                            val tk = JSONArray()
-                            try { treki(JSONObject(d.optString("resultJson", "{}")), tk, 0) } catch (ignored: Exception) {}
-                            if (tk.length() > 0) x.put("treki", tk)
-                            if (u.length() == 0) x.put("msg", "Готово, но файла в ответе нет")
-                            izm = true
-                        } else if (s == "fail") {
-                            val m = d.optString("failMsg", "")
-                            x.put("st", "oshibka").put("msg", if (m.isEmpty()) "Не получилось, кредиты не списаны" else chisto(m))
-                            izm = true
-                        } else if (System.currentTimeMillis() - x.optLong("t") > 30 * 60_000L) {
-                            x.put("st", "oshibka").put("msg", "Нет ответа 30 минут"); izm = true
-                        }
-                    } catch (e: Exception) {
-                        if (e.message.toString().startsWith("Ключ")) {
-                            try { x.put("st", "oshibka").put("msg", e.message); izm = true } catch (ignored: Exception) {}
-                        }
-                    }
-                }
-                if (izm) { synchronized(lock) { sohranitZadachi(z) }; js("pryamoyObnovit") }
-            }
-        }
+        @JavascriptInterface fun proverit() { proveritVse() }
 
         /** Any catalog model: body {model, input} built on the page from the model's schema. */
         @JavascriptInterface fun zapuskModel(model: String?, inputJson: String?, nazv: String?, tip: String?, prompt: String?) {
+            a.runOnUiThread { a.askNotifications() } // to say «Песня готова» when the app is in the background
             bg.execute {
                 val x = JSONObject()
                 try {

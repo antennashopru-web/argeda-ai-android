@@ -514,7 +514,7 @@ var S = {
 /* ---------- прямой режим (временный, только у владельца) ---------- */
 var P = window.ArgedaPryamoy || null;
 var pzTip='kartinka', pzFmt='3:4', tapV=0, tapT=0;
-var PZT={kartinka:{t:'Картинка',f:['3:4','1:1','9:16','16:9'],c:'≈ 4 кредита'},video:{t:'Видео 5 с',f:['9:16','16:9'],c:'≈ 80 кредитов'},muzyka:{t:'Песня',f:[],c:'по тарифу сервиса'}};
+var PZT={kartinka:{t:'Картинка',f:['3:4','1:1','9:16','16:9'],c:'≈ 4 кредита'},video:{t:'Видео 5 с',f:['9:16','16:9'],c:'≈ 80 кредитов'},muzyka:{t:'Песня',f:[],c:'≈ 12 кредитов'}};
 function pzEst(){ try{ return !!(P && P.est()); }catch(e){ return false; } }
 function pzList(){ try{ return P ? parse(P.zadachi()) : []; }catch(e){ return []; } }
 /* ===== Плеер музыки ===== */
@@ -819,7 +819,7 @@ function mzZvuk(knopka){
   return zvBlok()
     +'<label class="pl">Кто поёт</label>'+mzGolosChips()
     +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
-    +'<button class="btn a w" data-act="mz-pesnya">'+knopka+'</button><div class="hint" style="margin-top:6px">Будет два варианта песни. Готовые появятся ниже, в «Моей музыке».</div>';
+    +'<button class="btn a w" data-act="mz-pesnya">'+knopka+'</button><div class="hint" style="margin-top:6px">Будет два варианта песни, '+PZT.muzyka.c+'. Готовые появятся ниже, в «Моей музыке». Можно свернуть приложение — придёт уведомление.</div>';
 }
 function mzZhanrNastr(otkryt){
   return '<details class="mzd" data-dk="otkrytZhanr"'+((MZ.otkrytZhanr!=null?MZ.otkrytZhanr:otkryt)?' open':'')+'><summary>Язык, жанр и настроение</summary>'
@@ -858,7 +858,7 @@ function muzykaHtml(){
       +'<label class="pl">Название</label><input type="text" data-mz="mNazv" maxlength="80" value="'+esc(MZ.mNazv||'')+'" placeholder="Минусовка">'
       +zvBlok()
       +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
-      +'<button class="btn a w" data-act="mz-pesnya">Создать минусовку</button><div class="hint" style="margin-top:6px">Только музыка, без пения. Два варианта.</div>';
+      +'<button class="btn a w" data-act="mz-pesnya">Создать минусовку</button><div class="hint" style="margin-top:6px">Только музыка, без пения. Два варианта, '+PZT.muzyka.c+'.</div>';
   }
   var z=pzList().filter(function(x){return x.tip==='muzyka'}).reverse(), vse=z.length, fq=(MZ.fQ||'').toLowerCase(), ff=MZ.fF||'vse', izb=MZ.izb||[];
   z=z.filter(function(x){ var minus=/^Минусовка/.test(x.nazv||''); if(ff==='pesni'&&minus) return false; if(ff==='minus'&&!minus) return false;
@@ -909,7 +909,7 @@ function mzOpHtml(){
       +'<label class="pl">Стиль (необязательно)</label><textarea data-mz="stil" style="min-height:60px" placeholder="Пусто — как в оригинале">'+esc(MZ.stil)+'</textarea>'
       +'<button class="btn a w" data-act="mz-op">Продлить песню</button>';
   }
-  return h+'<div class="hint" style="margin-top:6px">Будет два варианта. Готовые появятся ниже, в «Моей музыке».</div>';
+  return h+'<div class="hint" style="margin-top:6px">Будет два варианта, '+PZT.muzyka.c+'. Готовые появятся ниже, в «Моей музыке».</div>';
 }
 function mzOp(){
   var t=MZ.tab, ist=MZ.ist||{}, v=MZ.versiya||'V6', inp, model, nm, kak;
@@ -941,7 +941,7 @@ function mzOp(){
     if(MZ.stil.trim()) inp.style=MZ.stil.trim().slice(0,1000);
     nm='Продление: '+nazv; kak='Продлить песню';
   }
-  sprosit(kak+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего счёта сервиса.', function(){
+  sprosit(kak+' «'+nazv+'»? Два варианта, спишется '+PZT.muzyka.c+' со счёта сервиса.', function(){
     P.zapuskModel(model, JSON.stringify(inp), nm, 'muzyka', nazv);
     toast('Запущено. Будет готово через пару минут'); setTimeout(function(){ redraw(); var e=document.getElementById('mz-moya'); if(e) e.scrollIntoView({behavior:'smooth'}); },300);
   });
@@ -972,7 +972,7 @@ function mzPesnya(){
   var nazv=((minus?MZ.mNazv:MZ.nazv)||(minus?'Минусовка':'Песня')).slice(0,80);
   var inp={custom_mode:true, instrumental:minus, model:MZ.versiya||'V6', title:nazv, style:stil.slice(0,1000)};
   if(!minus){ inp.lyrics=MZ.tekst.slice(0,5000); if(MZ.golos) inp.vocal_gender=MZ.golos; }
-  sprosit((minus?'Создать минусовку':'Создать песню')+' «'+nazv+'»? Два варианта, кредиты спишутся с вашего счёта сервиса.', function(){
+  sprosit((minus?'Создать минусовку':'Создать песню')+' «'+nazv+'»? Два варианта, спишется '+PZT.muzyka.c+' со счёта сервиса.', function(){
     P.zapuskModel('ai-music-api/generate', JSON.stringify(inp), (minus?'Минусовка: ':'Песня: ')+nazv, 'muzyka', minus?MZ.minus:nazv);
     toast('Запущено. Песня будет готова через пару минут'); setTimeout(function(){ redraw(); var e=document.getElementById('mz-moya'); if(e) e.scrollIntoView({behavior:'smooth'}); },300);
   });

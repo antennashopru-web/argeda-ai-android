@@ -838,9 +838,30 @@ function mzZvuk(knopka){
     +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
     +'<button class="btn a w" data-act="mz-pesnya">'+knopka+'</button><div class="hint" style="margin-top:6px">Будет два варианта песни, '+PZT.muzyka.c+'. Готовые появятся ниже, в «Моей музыке». Можно свернуть приложение — придёт уведомление.</div>';
 }
+/* язык песни = язык слов: если выбран другой, предлагаем перевести слова (иначе споют на языке текста) */
+var mzPerevod=false;
+var MZ_YZ_V={'Русский':'русский','Английский':'английский','Армянский':'армянский'};
+function mzYazykZametka(){
+  var tyz=mzYazykPoTekstu(MZ.tekst); if(!tyz||tyz===MZ.yazyk) return '';
+  return '<div class="note mzyz"><div><b>Слова сейчас на языке: '+MZ_YZ_V[tyz]+'</b><span>Песня поётся на языке слов. Чтобы спеть на языке «'+MZ_YZ_V[MZ.yazyk]+'», переведите текст — смысл и куплеты сохранятся.</span><br>'
+    +'<button data-act="mz-perevod"'+(mzPerevod?' disabled':'')+'>'+(mzPerevod?'Перевожу…':'Перевести текст на '+MZ_YZ_V[MZ.yazyk])+'</button></div></div>';
+}
+function mzPerevesti(){
+  if(mzPerevod||!MZ.tekst.trim()) return; mzPerevod=true;
+  var zap='Переведи текст песни на '+MZ_YZ_V[MZ.yazyk]+' язык так, чтобы его можно было петь: сохрани смысл, разметку в квадратных скобках ([Куплет 1], [Припев] и т.п.) оставь как есть, строки короткие, с рифмой, без мата.'
+    +' Ответ строго в формате: первая строка «Название: …» (название тоже переведи), дальше пустая строка и сам текст. Без пояснений.\n\nНазвание: '+(MZ.nazv||'')+'\n\n'+MZ.tekst;
+  P.chat('claude-sonnet-5-5', JSON.stringify([{role:'user',content:zap}])); redraw();
+}
+function mzPerevodOtvet(t,err){
+  mzPerevod=false;
+  if(t==null){ toast('Не получилось перевести: '+(err||'')); redraw(); return; }
+  var m=String(t).trim().match(/^\s*Название\s*[:：]\s*(.+)\n+([\s\S]*)$/i);
+  if(m){ MZ.nazv=m[1].replace(/[«»"*]/g,'').trim().slice(0,80); MZ.tekst=m[2].trim(); } else MZ.tekst=String(t).trim();
+  MZ.tid=null; mzSohr(); toast('Текст переведён — проверьте и создавайте'); if(cur==='razdel'&&curK==='muzyka') redraw();
+}
 function mzZhanrNastr(otkryt){
   return '<details class="mzd" data-dk="otkrytZhanr"'+((MZ.otkrytZhanr!=null?MZ.otkrytZhanr:otkryt)?' open':'')+'><summary>Язык, жанр и настроение</summary>'
-    +'<label class="pl">Язык</label>'+mzChips('yazyk',MZ_YZ)+'<label class="pl">Жанр</label>'+mzChips('zhanr',MZ_ZH)+'<label class="pl">Настроение</label>'+mzChips('nastr',MZ_NS)+'</details>';
+    +'<label class="pl">Язык</label>'+mzChips('yazyk',MZ_YZ)+(MZ.tab==='sochinit'&&MZ.shag===1?'':mzYazykZametka())+'<label class="pl">Жанр</label>'+mzChips('zhanr',MZ_ZH)+'<label class="pl">Настроение</label>'+mzChips('nastr',MZ_NS)+'</details>';
 }
 function muzykaHtml(){
   var h='<div class="mz"><div class="mzh"><h2>Создать музыку</h2><button class="mzl" data-act="mz-moya">Моя музыка ↓</button></div>';
@@ -858,10 +879,10 @@ function muzykaHtml(){
         +'<label class="pl">Слова песни</label><textarea data-mz="tekst" style="min-height:280px">'+esc(MZ.tekst)+'</textarea>'
         +'<small class="pd">Правьте как хотите. Разметка [Куплет], [Припев] помогает собрать песню.</small>'
         +'<div class="ry mzr"><button data-act="mz-tsohr">Сохранить текст</button><button data-act="mz-sochinit"'+(mzZhdu?' disabled':'')+'>'+(mzZhdu?'Сочиняю…':'Сочинить заново')+'</button></div>'
-        +'<button class="btn a w" data-act="mz-shag" data-v="3">Дальше: звучание</button>';
+        +mzYazykZametka()+'<button class="btn a w" data-act="mz-shag" data-v="3">Дальше: звучание</button>';
     } else {
       h+='<div class="mzi"><b>'+esc(MZ.nazv||'Без названия')+'</b><small>'+esc((MZ.tekst||'').replace(/\s+/g,' ').slice(0,120))+'…</small><button data-act="mz-shag" data-v="2">Изменить текст</button></div>'
-        +mzZvuk('Создать песню');
+        +mzYazykZametka()+mzZvuk('Создать песню');
     }
   } else if(MZ.tab==='svoy'){
     h+=mzMoiTeksty()+'<label class="pl">Название</label><input type="text" data-mz="nazv" maxlength="80" value="'+esc(MZ.nazv)+'" placeholder="Название песни">'
@@ -982,7 +1003,7 @@ function mzOtvet(t,err){
   MZ.shag=2; mzSohr(); toast('Текст готов — можно поправить'); if(cur==='razdel'&&curK==='muzyka') redraw();
 }
 function mzPesnya(){
-  var minus=MZ.tab==='minus', zvs=zvStil(), avto=mzStilAvto(), stil=(zvs&&avto&&MZ.zvTab!=='svoy'?zvs+', '+avto:(zvs||avto)).trim(); /* жанр и настроение из «Язык, жанр и настроение» не теряются, если выбрано и звучание */ var yzt=MZ_YZT[MZ.yazyk]; if(!minus&&yzt&&stil.indexOf(yzt)<0) stil+=(stil?', ':'')+yzt;
+  var minus=MZ.tab==='minus', zvs=zvStil(), avto=mzStilAvto(), stil=(zvs&&avto&&MZ.zvTab!=='svoy'?zvs+', '+avto:(zvs||avto)).trim(); /* жанр и настроение из «Язык, жанр и настроение» не теряются, если выбрано и звучание */ var tyz=mzYazykPoTekstu(MZ.tekst)||MZ.yazyk, yzt=MZ_YZT[tyz]; if(!minus&&yzt){ stil=stil.replace(/(, )?(russian|english|armenian) vocals/g,'').replace(/^, /,''); stil+=(stil?', ':'')+yzt; } /* поют на языке слов */
   if(minus){ var zs=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}).map(function(y){return y.s}).join(', ')||(MZ.zvTab==='svoy'?(MZ.stil||'').trim():''); stil=[MZ.minus.trim(),zs||mzStilAvto().replace(/(, )?(russian|english|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental, no vocals'; if(stil===', instrumental, no vocals'){ toast('Опишите, какая музыка нужна или выберите звучание'); return; } }
   else if(!MZ.tekst.trim()){ toast('Нет текста песни'); return; }
   if(!stil) stil='pop';
@@ -1034,10 +1055,11 @@ function mzPovtorit(id, aid){
 }
 function mzKlik(d){
   if(d.act==='mz-povtor'){ mzPovtorit(d.tid, d.aid); return true; }
+  if(d.act==='mz-perevod'){ mzPerevesti(); return true; }
   var a=d.act;
   if(a==='mz-tab'){ MZ.tab=d.v; mzSohr(); redraw(); return true; }
   if(a==='mz-shag'){ var s=+d.v; if(s>1&&!MZ.tekst){ toast('Сначала сочините текст'); return true; } MZ.shag=s; mzSohr(); redraw(); return true; }
-  if(a==='mz-v'){ var mf=d.mf; MZ[mf]=(MZ[mf]===d.v&&mf!=='versiya'&&mf!=='yazyk'&&mf!=='golos')?'':d.v; if(mf==='zhanr'||mf==='nastr'||mf==='yazyk') MZ.stil=''; if(mf==='golos') MZ.zvSel=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}); /* голос выбирается в одном месте: «Кто поёт» снимает чип из «Вокала» */ mzSohr(); redraw(); return true; }
+  if(a==='mz-v'){ var mf=d.mf; MZ[mf]=(MZ[mf]===d.v&&mf!=='versiya'&&mf!=='yazyk'&&mf!=='golos')?'':d.v; if(mf==='zhanr'||mf==='nastr'||mf==='yazyk') MZ.stil=''; if(mf==='yazyk'&&MZ.tekst&&mzYazykPoTekstu(MZ.tekst)&&mzYazykPoTekstu(MZ.tekst)!==MZ.yazyk) toast('Слова на другом языке — нажмите «Перевести текст»'); if(mf==='golos') MZ.zvSel=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}); /* голос выбирается в одном месте: «Кто поёт» снимает чип из «Вокала» */ mzSohr(); redraw(); return true; }
   if(a==='mz-sochinit'){ mzSochinit(); return true; }
   if(a==='mz-op'){ mzOp(); return true; }
   if(a==='mz-f'){ MZ.fF=d.v; mzSohr(); redraw(); return true; }
@@ -1099,6 +1121,7 @@ window.pzZagr=function(id,url,err){
   toast('Файл загружен'); if(cur==='pryamoy'||cur==='razdel') redraw();
 };
 window.pzChat=function(t,err){
+  if(mzPerevod){ mzPerevodOtvet(t,err); return; }
   if(mzZhdu){ mzOtvet(t,err); return; }
   pzChatZhdu=false;
   if(t==null){ toast('Ошибка: '+(err||'')); pzChatH.pop(); } else pzChatH.push({role:'assistant',content:t});

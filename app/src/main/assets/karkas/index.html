@@ -965,7 +965,7 @@ function mzOtvet(t,err){
   MZ.shag=2; mzSohr(); toast('Текст готов — можно поправить'); if(cur==='razdel'&&curK==='muzyka') redraw();
 }
 function mzPesnya(){
-  var minus=MZ.tab==='minus', stil=(zvStil()||mzStilAvto()).trim(); var yzt=MZ_YZT[MZ.yazyk]; if(!minus&&yzt&&stil.indexOf(yzt)<0) stil+=(stil?', ':'')+yzt;
+  var minus=MZ.tab==='minus', zvs=zvStil(), avto=mzStilAvto(), stil=(zvs&&avto&&MZ.zvTab!=='svoy'?zvs+', '+avto:(zvs||avto)).trim(); /* жанр и настроение из «Язык, жанр и настроение» не теряются, если выбрано и звучание */ var yzt=MZ_YZT[MZ.yazyk]; if(!minus&&yzt&&stil.indexOf(yzt)<0) stil+=(stil?', ':'')+yzt;
   if(minus){ var zs=zvVybrano().filter(function(y){return y.id.indexOf('vokal')!==0}).map(function(y){return y.s}).join(', ')||(MZ.zvTab==='svoy'?(MZ.stil||'').trim():''); stil=[MZ.minus.trim(),zs||mzStilAvto().replace(/(, )?(russian|english|armenian) vocals/,'')].filter(Boolean).join(', ')+', instrumental, no vocals'; if(stil===', instrumental, no vocals'){ toast('Опишите, какая музыка нужна или выберите звучание'); return; } }
   else if(!MZ.tekst.trim()){ toast('Нет текста песни'); return; }
   if(!stil) stil='pop';

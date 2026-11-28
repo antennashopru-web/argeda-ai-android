@@ -385,6 +385,34 @@ class Karkas(private val a: MainActivity, val view: WebView) {
             }
         }
 
+        /** Песню по ссылке — файлом в мессенджер: скачать в кэш и отдать в «Поделиться». */
+        @JavascriptInterface fun podelitsyaPesnei(url: String?, nazv: String?) {
+            if (url == null) return
+            if (!url.startsWith("https://")) { podelitsya(url, "audio/mpeg"); return }
+            a.runOnUiThread { Toast.makeText(a, "Готовлю песню…", Toast.LENGTH_SHORT).show() }
+            Thread {
+                try {
+                    val dir = File(a.cacheDir, "share"); dir.mkdirs()
+                    for (old in dir.listFiles() ?: emptyArray()) if (System.currentTimeMillis() - old.lastModified() > 3600_000) old.delete()
+                    val ras = Regex("\\.(mp3|wav|m4a)(\\?|$)", RegexOption.IGNORE_CASE).find(url)?.groupValues?.get(1)?.lowercase() ?: "mp3"
+                    val imya = (nazv ?: "Песня").replace(Regex("[^\\p{L}\\p{N} ._-]"), "").trim().take(60).ifEmpty { "Песня" }
+                    val f = File(dir, "$imya.$ras")
+                    val c = URL(url).openConnection() as HttpURLConnection
+                    c.connectTimeout = 20000; c.readTimeout = 60000
+                    if (c.responseCode !in 200..299) throw Exception("код ${c.responseCode}")
+                    c.inputStream.use { inp -> f.outputStream().use { inp.copyTo(it) } }
+                    val mime = when (ras) { "wav" -> "audio/wav"; "m4a" -> "audio/mp4"; else -> "audio/mpeg" }
+                    val i = Intent(Intent.ACTION_SEND).setType(mime)
+                        .putExtra(Intent.EXTRA_STREAM, CameraFileProvider.uriFor("share", f))
+                        .putExtra(Intent.EXTRA_TITLE, imya)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    a.runOnUiThread { try { a.startActivity(Intent.createChooser(i, "Отправить песню")) } catch (e: Exception) { Toast.makeText(a, "Не получилось поделиться", Toast.LENGTH_SHORT).show() } }
+                } catch (e: Exception) {
+                    a.runOnUiThread { Toast.makeText(a, "Песня не скачалась — проверьте интернет", Toast.LENGTH_LONG).show() }
+                }
+            }.start()
+        }
+
         @JavascriptInterface fun galereya() {
             a.runOnUiThread {
                 try { a.startActivity(Intent(Intent.ACTION_VIEW).setType("image/*").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

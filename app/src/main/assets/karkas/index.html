@@ -223,6 +223,9 @@ details[open] summary{margin-bottom:12px}
 .plq{background:var(--pov1);border:1px solid var(--liniya);border-radius:20px;padding:6px 14px 10px}.plq h3{margin:10px 0 6px}.plr{width:100%;padding:8px 0;border-top:1px solid var(--liniya)}
 .trk{border:1px solid var(--liniya);border-radius:16px;padding:10px;margin:8px 0;background:var(--pov1)}.trk.on{border-color:#ff9a3c}
 .trp{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ffb35c,#ff6a4d);color:#1a1206;margin-left:auto}.trp svg{width:20px;height:20px}
+.mzpi{display:flex;gap:6px;margin-top:8px}.mzpi input{flex:1;min-width:0}.mzpi button{font-weight:700;padding:0 14px;border-radius:11px;border:0;background:#ff8a3c;color:#fff}
+.mzvse{display:flex;gap:8px;margin:10px 0 4px}.mzvse .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px}.mzvse svg{width:18px;height:18px}
+.plk4{margin-top:-6px}.plk4 button{gap:6px;display:flex;align-items:center;justify-content:center;font-size:13.5px}.plk4 svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
 .trd{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.trd button.izb{color:#ff8a3c}.trd button{font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:11px;background:var(--knopka);color:var(--tekst);border:0}
 .zv{border:1px solid var(--liniya);border-radius:18px;padding:14px;background:var(--pov1);margin:12px 0}.zvh b{display:block;font-size:17px}.zvh small{display:block;color:var(--tekst3);font-size:12.5px;margin:2px 0 10px}
 .zvt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.zvt::-webkit-scrollbar{display:none}.zvt button{flex:1 1 auto;padding:8px 14px;border-radius:12px;border:1px solid var(--liniya);background:var(--knopka);font-weight:700;font-size:13px}.zvt button.on{border-color:#ff9a3c;background:rgba(255,154,60,.16)}
@@ -534,7 +537,7 @@ var plA=new Audio(); plA.preload='auto';
 window.__PL=function(){ return {PL:PL,a:plA,MZ:MZ}; };
 function plTreki(x){ if(x.tip!=='muzyka'||x.st!=='gotovo') return [];
   var t=(x.treki&&x.treki.length)?x.treki:(x.urls||[]).filter(function(u){return /\.(mp3|wav|m4a)(\?|$)/i.test(u)}).map(function(u){return {url:u}});
-  return t.map(function(y,i){ return {url:y.url,title:y.title||String(x.nazv||'Песня').replace(/^(Песня|Минусовка|Кавер|Продление|Вокал на минус): /,''),img:y.img||'',dur:y.dur||0,tekst:y.tekst||'',stil:y.stil||'',taskId:x.id,audioId:y.id||'',n:i+1}; }); }
+  return t.map(function(y,i){ return {url:y.url,title:(MZ.imena&&MZ.imena[y.url])||y.title||String(x.nazv||'Песня').replace(/^(Песня|Минусовка|Кавер|Продление|Вокал на минус): /,''),img:y.img||'',dur:y.dur||0,tekst:y.tekst||'',stil:y.stil||'',taskId:x.id,audioId:y.id||'',n:i+1}; }); }
 function plVse(){ var o=[]; pzList().slice().reverse().forEach(function(x){ o=o.concat(plTreki(x)); }); return o; }
 function plTek(){ return PL.q[PL.i]; }
 function plHash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -552,7 +555,10 @@ function plSled(dir){ var n=PL.q.length; if(!n) return;
   if(PL.shuf&&n>1){ var j; do{ j=Math.floor(Math.random()*n); }while(j===PL.i); PL.i=j; }
   else { PL.i+=dir; if(PL.i>=n){ if(PL.rep===1) PL.i=0; else { PL.i=n-1; plA.pause(); return; } } if(PL.i<0) PL.i=0; }
   plZapusk(); }
-plA.addEventListener('ended',function(){ if(PL.rep===2){ plA.currentTime=0; plA.play(); } else plSled(1); });
+var PL_SON=[0,15,30,60,-1];
+function plSonTekst(){ if(!PL.son) return 'Таймер сна'; if(PL.son===-1) return 'До конца песни'; var m=Math.max(1,Math.ceil((PL.sonDo-Date.now())/60000)); return 'Сон через '+m+' мин'; }
+setInterval(function(){ if(PL.son>0&&Date.now()>=PL.sonDo){ PL.son=0; plA.pause(); toast('Таймер сна: музыка остановлена'); plRis(); } else if(PL.son>0&&PL.polnyy){ var b=document.querySelector('[data-act="pl-son"]'); if(b) b.textContent=plSonTekst(); } },15000);
+plA.addEventListener('ended',function(){ if(PL.son===-1){ PL.son=0; plRis(); toast('Таймер сна: музыка остановлена'); return; } if(PL.rep===2){ plA.currentTime=0; plA.play(); } else plSled(1); });
 plA.addEventListener('play',plRis); plA.addEventListener('pause',plRis); plA.addEventListener('loadedmetadata',plRis);
 var plOsh=0, plPauzaT=0, plZhdT=0;
 function plMost(w){ if(!K||!K.pleer) return; try{ var t=plTek(); K.pleer(w,t?t.title:'',Math.round((plA.currentTime||0)*1000),Math.round((plA.duration||(t&&t.dur)||0)*1000)); }catch(e){} }
@@ -601,6 +607,7 @@ function plRis(){
       +'<div class="plk2"><button class="plb'+(PL.shuf?' vkl':'')+'" data-act="pl-shuf">'+IKP.shuf+'</button><button class="plb x" data-act="pl-prev">'+IKP.prev+'</button>'
       +'<button class="plb big" data-act="pl-pp">'+(igr?IKP.pause:IKP.play)+'</button><button class="plb x" data-act="pl-next">'+IKP.next+'</button><button class="plb'+(PL.rep?' vkl':'')+'" data-act="pl-rep">'+IKP.rep+(PL.rep===2?'<em>1</em>':'')+'</button></div>'
       +'<div class="plk3"><button data-act="pl-skok" data-v="-10">−10</button><button data-act="pl-skok" data-v="10">+10</button><button data-act="pl-spd">'+PL.spd+'×</button>'+(t.tekst?'<button data-act="pl-tekst" class="'+(PL.tekst?'vkl':'')+'">'+IKP.tekst+'</button>':'')+'<button data-act="pl-save">'+IKP.save+'</button>'+(t.taskId?'<button data-act="mz-povtor" data-tid="'+esc(t.taskId)+'" data-aid="'+esc(t.audioId||'')+'">Повторить</button>':'')+'</div>'
+      +'<div class="plk3 plk4"><button data-act="mz-podel" data-u="'+esc(t.url)+'" data-nm="'+esc(t.title)+'">'+svg('share')+' Отправить</button><button data-act="pl-son" class="'+(PL.son?'vkl':'')+'">'+plSonTekst()+'</button></div>'
       +(PL.tekst&&t.tekst?'<div class="pltx">'+esc(t.tekst).replace(/\n/g,'<br>')+'</div>':'')
       +'<div class="plq"><h3>Дальше · '+Math.max(0,PL.q.length-PL.i-1)+'</h3>'+PL.q.map(function(y,j){ return j<=PL.i?'':'<button class="plr" data-act="pl-q" data-v="'+j+'">'+plObl(y,'plo')+'<span class="plt"><b>'+esc(y.title)+'</b><small>вариант '+y.n+(y.dur?' · '+plVremya(y.dur):'')+'</small></span></button>'; }).join('')+'</div>';
   }
@@ -612,7 +619,7 @@ function plTrekHtml(x){
   var t=plTek();
   return tr.map(function(y){ var on=t&&t.url===y.url, a=' data-tid="'+esc(x.id)+'" data-aid="'+esc(y.audioId)+'" data-dur="'+(y.dur||0)+'" data-nm="'+esc(y.title)+'"';
     return '<div class="trk'+(on?' on':'')+'" data-u="'+esc(y.url)+'"><button class="trm" data-act="pl-igrat" data-u="'+esc(y.url)+'">'+plObl(y,'plo')+'<span class="plt"><b>'+esc(y.title)+'</b><small>Вариант '+y.n+(y.dur?' · '+plVremya(y.dur):'')+'</small></span><span class="trp">'+(on&&!plA.paused?IKP.pause:IKP.play)+'</span></button>'
-      +'<div class="trd"><button data-act="mz-izb" data-u="'+esc(y.url)+'" class="'+((MZ.izb||[]).indexOf(y.url)>=0?'izb':'')+'">'+((MZ.izb||[]).indexOf(y.url)>=0?'★':'☆')+'</button><button data-act="pz-skachat" data-u="'+esc(y.url)+'" data-m="audio/mpeg">Сохранить</button>'+(y.audioId?'<button data-act="mz-ist" data-op="prodlit"'+a+'>Продлить</button><button data-act="mz-ist" data-op="kaver"'+a+'>Кавер</button>':'')+(x.tip==='muzyka'?'<button data-act="mz-povtor"'+a+'>Повторить</button>':'')+'</div>'+(x.tip==='muzyka'?mzParametry(x,y):'')+'</div>'; }).join('');
+      +'<div class="trd"><button data-act="mz-izb" data-u="'+esc(y.url)+'" class="'+((MZ.izb||[]).indexOf(y.url)>=0?'izb':'')+'">'+((MZ.izb||[]).indexOf(y.url)>=0?'★':'☆')+'</button><button data-act="pz-skachat" data-u="'+esc(y.url)+'" data-m="audio/mpeg">Сохранить</button><button data-act="mz-podel" data-u="'+esc(y.url)+'" data-nm="'+esc(y.title)+'">Отправить</button><button data-act="mz-pereim" data-u="'+esc(y.url)+'">Переименовать</button>'+(y.audioId?'<button data-act="mz-ist" data-op="prodlit"'+a+'>Продлить</button><button data-act="mz-ist" data-op="kaver"'+a+'>Кавер</button>':'')+(x.tip==='muzyka'?'<button data-act="mz-povtor"'+a+'>Повторить</button>':'')+'</div>'+(MZ.pereim===y.url?'<div class="mzpi"><input type="text" id="mz-pi" maxlength="60" value="'+esc(y.title)+'"><button data-act="mz-pereim-ok" data-u="'+esc(y.url)+'">Готово</button></div>':'')+(x.tip==='muzyka'?mzParametry(x,y):'')+'</div>'; }).join('');
 }
 function plKlik(d,el){
   var a=d.act, t=plTek();
@@ -628,6 +635,7 @@ function plKlik(d,el){
   if(a==='pl-rep'){ PL.rep=(PL.rep+1)%3; toast(['Повтор выключен','Повтор всех','Повтор одной'][PL.rep]); plRis(); return true; }
   if(a==='pl-skok'){ plA.currentTime=Math.max(0,Math.min((plA.duration||0)-0.5,plA.currentTime+ +d.v)); return true; }
   if(a==='pl-spd'){ var s=[1,1.25,1.5,2,0.75]; PL.spd=s[(s.indexOf(PL.spd)+1)%s.length]; plA.playbackRate=PL.spd; plRis(); return true; }
+  if(a==='pl-son'){ var k=PL_SON.indexOf(PL.son||0); PL.son=PL_SON[(k+1)%PL_SON.length]; if(PL.son>0) PL.sonDo=Date.now()+PL.son*60000; toast(PL.son?(PL.son===-1?'Остановлю после этой песни':'Остановлю через '+PL.son+' мин'):'Таймер сна выключен'); plRis(); return true; }
   if(a==='pl-tekst'){ PL.tekst=!PL.tekst; plRis(); return true; }
   if(a==='pl-save'){ if(t&&/^https:/.test(t.url)){ fZapomnit(t.url); P.skachat(t.url,'audio/mpeg'); } else if(t) toast('Песня уже в телефоне'); return true; }
   if(a==='pl-q'){ PL.i=+d.v; plZapusk(); return true; }
@@ -863,6 +871,13 @@ function mzZhanrNastr(otkryt){
   return '<details class="mzd" data-dk="otkrytZhanr"'+((MZ.otkrytZhanr!=null?MZ.otkrytZhanr:otkryt)?' open':'')+'><summary>Язык, жанр и настроение</summary>'
     +'<label class="pl">Язык</label>'+mzChips('yazyk',MZ_YZ)+(MZ.tab==='sochinit'&&MZ.shag===1?'':mzYazykZametka())+'<label class="pl">Жанр</label>'+mzChips('zhanr',MZ_ZH)+'<label class="pl">Настроение</label>'+mzChips('nastr',MZ_NS)+'</details>';
 }
+function mzFiltr(z){ var fq=(MZ.fQ||'').toLowerCase(), ff=MZ.fF||'vse', izb=MZ.izb||[];
+  z=z.filter(function(x){ var minus=/^Минусовка/.test(x.nazv||''); if(ff==='pesni'&&minus) return false; if(ff==='minus'&&!minus) return false;
+    if(ff==='izb'&&!plTreki(x).some(function(t){return izb.indexOf(t.url)>=0})) return false;
+    if(fq){ var tx=((x.nazv||'')+' '+(x.prompt||'')+' '+(x.treki||[]).map(function(t){return (t.title||'')+' '+((MZ.imena&&MZ.imena[t.url])||'')+' '+(t.tekst||'')+' '+(t.stil||'')}).join(' ')).toLowerCase(); if(tx.indexOf(fq)<0) return false; }
+    return true; });
+  return z; }
+function mzVidimye(){ var o=[]; mzFiltr(pzList().filter(function(x){return x.tip==='muzyka'}).reverse()).slice(0,20).forEach(function(x){ var tr=plTreki(x); if((MZ.fF||'vse')==='izb') tr=tr.filter(function(t){return (MZ.izb||[]).indexOf(t.url)>=0}); o=o.concat(tr); }); return o; }
 function muzykaHtml(){
   var h='<div class="mz"><div class="mzh"><h2>Создать музыку</h2><button class="mzl" data-act="mz-moya">Моя музыка ↓</button></div>';
   h+='<div class="chips mzt3">'+[['sochinit','Сочинить'],['svoy','Свой текст'],['minus','Минусовка'],['vokal','Вокал на минус'],['kaver','Кавер'],['prodlit','Продлить']].map(function(t){return '<button data-act="mz-tab" data-v="'+t[0]+'" class="'+(MZ.tab===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>';
@@ -898,13 +913,11 @@ function muzykaHtml(){
       +'<label class="pl">Версия</label>'+mzChips('versiya',[['V6','V6'],['V6_MINI','V6 Мини — быстрее'],['V6_WILD','V6 Дикий — смелее']])
       +'<button class="btn a w" data-act="mz-pesnya">Создать минусовку</button><div class="hint" style="margin-top:6px">Только музыка, без пения. Два варианта, '+PZT.muzyka.c+'.</div>';
   }
-  var z=pzList().filter(function(x){return x.tip==='muzyka'}).reverse(), vse=z.length, fq=(MZ.fQ||'').toLowerCase(), ff=MZ.fF||'vse', izb=MZ.izb||[];
-  z=z.filter(function(x){ var minus=/^Минусовка/.test(x.nazv||''); if(ff==='pesni'&&minus) return false; if(ff==='minus'&&!minus) return false;
-    if(ff==='izb'&&!plTreki(x).some(function(t){return izb.indexOf(t.url)>=0})) return false;
-    if(fq){ var tx=((x.nazv||'')+' '+(x.prompt||'')+' '+(x.treki||[]).map(function(t){return (t.title||'')+' '+(t.tekst||'')+' '+(t.stil||'')}).join(' ')).toLowerCase(); if(tx.indexOf(fq)<0) return false; }
-    return true; });
+  var z=pzList().filter(function(x){return x.tip==='muzyka'}).reverse(), vse=z.length, ff=MZ.fF||'vse';
+  z=mzFiltr(z);
   h+='<h3 id="mz-moya">Моя музыка</h3>'+(vse?'<input type="text" class="zvq" data-fq="1" placeholder="Название, слова или стиль" value="'+esc(MZ.fQ||'')+'">'
     +'<div class="chips mzc">'+[['vse','Все'],['pesni','Песни'],['minus','Минусы'],['izb','★ Избранное']].map(function(t){return '<button data-act="mz-f" data-v="'+t[0]+'" class="'+(ff===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>':'')
+    +(z.length?'<div class="mzvse"><button class="btn a" data-act="mz-vse">'+IKP.play+' Слушать все</button><button class="btn b" data-act="mz-vse" data-v="shuf">'+IKP.shuf+' Вперемешку</button></div>':'')
     +(vse&&!z.length?'<div class="empty">Ничего не нашлось.</div>':'')+(z.length?z.slice(0,20).map(mzKartaTrekov).join(''):'<div class="empty">Здесь будут ваши песни.</div>');
   h+='<button class="btn b w" data-act="mz-studiya" style="margin-top:14px">Все настройки модели (Студия)</button></div>';
   return h;
@@ -1063,6 +1076,10 @@ function mzKlik(d){
   if(a==='mz-sochinit'){ mzSochinit(); return true; }
   if(a==='mz-op'){ mzOp(); return true; }
   if(a==='mz-f'){ MZ.fF=d.v; mzSohr(); redraw(); return true; }
+  if(a==='mz-podel'){ if(K&&K.podelitsyaPesnei) K.podelitsyaPesnei(d.u, d.nm||'Песня'); else toast('Обновите приложение'); return true; }
+  if(a==='mz-pereim'){ MZ.pereim=MZ.pereim===d.u?null:d.u; redraw(); var pi=document.getElementById('mz-pi'); if(pi){ pi.focus(); pi.select(); } return true; }
+  if(a==='mz-pereim-ok'){ var pi2=document.getElementById('mz-pi'), nv=pi2?pi2.value.trim():''; var im=MZ.imena||{}; if(nv) im[d.u]=nv.slice(0,60); else delete im[d.u]; MZ.imena=im; MZ.pereim=null; mzSohr(); PL.q.forEach(function(t){ if(t.url===d.u) t.title=nv||t.title; }); plMedia(); plRis(); redraw(); toast('Название сохранено'); return true; }
+  if(a==='mz-vse'){ var vs=mzVidimye(); if(!vs.length) return true; PL.q=vs; PL.shuf=d.v==='shuf'; PL.i=PL.shuf?Math.floor(Math.random()*vs.length):0; plZapusk(); return true; }
   if(a==='mz-izb'){ var iz=(MZ.izb||[]).slice(), k=iz.indexOf(d.u); if(k>=0) iz.splice(k,1); else iz.push(d.u); MZ.izb=iz.slice(-200); mzSohr(); redraw(); return true; }
   if(a==='mz-ideya'){ MZ.ideya=(MZ.ideya.trim()?MZ.ideya.trim()+'. ':'')+d.v+': '; mzSohr(); redraw(); var ta=document.querySelector('[data-mz="ideya"]'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); } return true; }
   if(a==='mz-ist'){ MZ.ist={tip:'moy',taskId:d.tid,audioId:d.aid,dur:+d.dur||0,title:d.nm}; if(d.op){ MZ.tab=d.op; MZ.kNazv=''; MZ.pNazv=''; MZ.sek=''; } mzSohr(); if(d.op&&!(cur==='razdel'&&curK==='muzyka')){ PL.polnyy=false; plRis(); show('razdel','muzyka'); } else redraw(); if(d.op) window.scrollTo(0,0); return true; }

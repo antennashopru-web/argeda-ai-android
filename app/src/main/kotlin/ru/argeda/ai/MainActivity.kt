@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.DownloadManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.ContentValues
@@ -64,7 +66,9 @@ class MainActivity : Activity() {
         private val EXTERNAL_HOSTS = arrayOf(
             "t.me", "telegram.me", "telegram.org", "wildberries.ru", "wb.ru", "ozon.ru", "market.yandex.ru",
             "youtube.com", "youtu.be", "vk.com", "rutube.ru", "dzen.ru", "argeda.ru", "crm.argeda.ru",
-            "play.google.com", "apps.rustore.ru", "rustore.ru", "maps.google.com", "yandex.ru", "2gis.ru"
+            "play.google.com", "apps.rustore.ru", "rustore.ru", "maps.google.com", "yandex.ru", "2gis.ru",
+            // SBP payment links: Android hands them to the bank app (inside the app they stopped at a bank list)
+            "qr.nspk.ru", "sub.nspk.ru"
         )
 
         private fun mimeForExtension(e: String): String? = when (e.removePrefix(".")) {
@@ -193,6 +197,40 @@ class MainActivity : Activity() {
             runOnUiThread { download(w, url, w.settings.userAgentString, if (n.isEmpty()) null else "attachment; filename=\"$n\"", null) }
         }
 
+        /** «Сохранить» with a direct link to a file on another host (results are often stored there): download it instead of opening a bare video page. */
+        @JavascriptInterface
+        fun skachatFayl(url: String?, name: String?) {
+            if (!onOurHost() || url == null || !url.startsWith("https://")) return
+            val n = bezopasnoeImya(name).takeIf { !name.isNullOrBlank() }
+            runOnUiThread { download(w, url, w.settings.userAgentString, if (n == null) null else "attachment; filename=\"$n\"", null) }
+        }
+
+        /** navigator.clipboard.writeText: the «Копировать» buttons of texts and the mentor work in every WebView version. */
+        @JavascriptInterface
+        fun kopirovat(text: String?) {
+            if (!onOurHost() || text == null) return
+            runOnUiThread { kopirovatTekst(text) }
+        }
+
+        /**
+         * The site tells that a generation is ready (video, picture, song, voice): if the app is minimised,
+         * a notification appears; a tap opens put (a path of the site). Call: ArgedaApp.gotovo('Видео готово', 'Kling 4.0: кот…', '/video').
+         */
+        @JavascriptInterface
+        fun gotovo(zag: String?, tekst: String?, put: String?) {
+            if (!onOurHost()) return
+            val p = put?.takeIf { it.startsWith("/") && !it.startsWith("//") }
+            runOnUiThread {
+                if (aktivno) return@runOnUiThread   // the person is looking at the app: the site shows it itself
+                askNotifications()
+                Gotovo.pokazat(this@MainActivity, "sayt-" + (zag ?: "") + (tekst ?: "") + (p ?: ""), zag ?: "Готово", tekst ?: "", p, null, null)
+            }
+        }
+
+        /** A generation starts on the site: ask once for notifications, so «Готово» can reach a minimised app. */
+        @JavascriptInterface
+        fun zhdu() { if (onOurHost()) runOnUiThread { askNotifications() } }
+
         /** navigator.share({files}) */
         @JavascriptInterface
         fun shareFile(base64: String?, mime: String?, name: String?, text: String?) {
@@ -235,6 +273,53 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun saveFailed(why: String?) {
             runOnUiThread { Toast.makeText(this@MainActivity, "Не удалось скачать файл", Toast.LENGTH_SHORT).show() }
+        }
+    }
+
+    fun kopirovatTekst(text: String) {
+        try {
+            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("ARGEDA AI", text))
+            // Android 13+ shows its own «Скопировано»
+            if (Build.VERSION.SDK_INT < 33) Toast.makeText(this, "Скопировано", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) { Toast.makeText(this, "Не удалось скопировать", Toast.LENGTH_SHORT).show() }
+    }
+
+    fun karkasVidim(): Boolean = try { karkas.vidim() } catch (e: Exception) { false }
+
+    @Volatile private var aktivno = false
+
+    // ---------- video on the whole screen (the «развернуть» button of a player) ----------
+    private var polnyy: View? = null
+    private var polnyyCb: WebChromeClient.CustomViewCallback? = null
+
+    fun pokazatPolnyy(v: View, cb: WebChromeClient.CustomViewCallback) {
+        if (polnyy != null) { try { cb.onCustomViewHidden() } catch (ignored: Exception) {}; return }
+        polnyy = v; polnyyCb = cb
+        v.setBackgroundColor(0xFF000000.toInt())
+        findViewById<FrameLayout>(R.id.koren).addView(v, FrameLayout.LayoutParams(-1, -1))
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        paneli(false)
+    }
+
+    fun skrytPolnyy() {
+        val v = polnyy ?: return
+        polnyy = null
+        try { findViewById<FrameLayout>(R.id.koren).removeView(v) } catch (ignored: Exception) {}
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        paneli(true)
+        val cb = polnyyCb; polnyyCb = null
+        try { cb?.onCustomViewHidden() } catch (ignored: Exception) {}
+    }
+
+    private fun paneli(vidny: Boolean) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            val c = window.insetsController ?: return
+            if (vidny) c.show(WindowInsets.Type.systemBars())
+            else { c.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE; c.hide(WindowInsets.Type.systemBars()) }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = if (vidny) 0 else
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
         }
     }
 
@@ -340,6 +425,8 @@ class MainActivity : Activity() {
                 fileCallback?.onReceiveValue(null)
                 fileCallback = cb; openFileChooser(params); return true
             }
+            override fun onShowCustomView(v: View, cb: CustomViewCallback) { pokazatPolnyy(v, cb) }
+            override fun onHideCustomView() { skrytPolnyy() }
         }
 
         setupWebView(web)
@@ -433,6 +520,9 @@ class MainActivity : Activity() {
                 requestPermissions(missing.toTypedArray(), RC_PERM_WEB)
             }
 
+            override fun onShowCustomView(v: View, cb: CustomViewCallback) { pokazatPolnyy(v, cb) }
+            override fun onHideCustomView() { skrytPolnyy() }
+
             override fun onCreateWindow(view: WebView, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message): Boolean {
                 // target=_blank / window.open: a second window over the page (the form underneath keeps its state)
                 val p = WebView(this@MainActivity)
@@ -440,6 +530,12 @@ class MainActivity : Activity() {
                 p.webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(v: WebView, req: WebResourceRequest): Boolean {
                         if (handleUrl(req.url)) { closePopup(); return true }
+                        // a payment (bank page) opened in a second window returns to our site: show it in the main window,
+                        // so the balance and the order are fresh and the person is not left in a small window
+                        val sey = v.url
+                        if (req.isForMainFrame && HOST == req.url.host && sey != null && sey.startsWith("http") && HOST != Uri.parse(sey).host) {
+                            val kuda = req.url.toString(); closePopup(); web.loadUrl(kuda); return true
+                        }
                         return false
                     }
 
@@ -450,6 +546,8 @@ class MainActivity : Activity() {
                 }
                 p.webChromeClient = object : WebChromeClient() {
                     override fun onCloseWindow(w: WebView) { closePopup() }
+                    override fun onShowCustomView(v: View, cb: CustomViewCallback) { pokazatPolnyy(v, cb) }
+                    override fun onHideCustomView() { skrytPolnyy() }
                     override fun onReceivedTitle(w: WebView, t: String?) { if (!t.isNullOrEmpty()) popupTitle.text = t }
                     override fun onShowFileChooser(w: WebView, cb: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                         fileCallback?.onReceiveValue(null)
@@ -881,6 +979,16 @@ class MainActivity : Activity() {
     private fun vhod(i: Intent?): String? {
         if (i == null) return null
         val act = i.action
+        if (Gotovo.ACTION == act) {
+            // a tap on «Видео готово»: the site page of the work, or the screen of the app's studio
+            val put = i.getStringExtra("put")
+            if (put != null && put.startsWith("/") && !put.startsWith("//")) return "https://$HOST$put"
+            val ek = i.getStringExtra("ekran") ?: return null
+            karkas.zakrep = true
+            karkas.ekran(ek, i.getStringExtra("k"), null)
+            if (!karkas.vidim()) karkas.pokazat(if (loadFailed || !stranitsaGotova) "net" else "ok")
+            return null
+        }
         if ("ru.argeda.ai.RAZDEL" == act) {
             val put = i.getStringExtra("put")
             karkas.ekran(i.getStringExtra("ekran"), i.getStringExtra("k"), null)
@@ -929,6 +1037,7 @@ class MainActivity : Activity() {
 
     @Deprecated("Kept on purpose: the app has no androidx back dispatcher")
     override fun onBackPressed() {
+        if (polnyy != null) { skrytPolnyy(); return }
         val pw = popupWeb
         if (pw != null) { if (pw.canGoBack()) pw.goBack() else closePopup(); return }
         if (karkas.vidim()) {
@@ -953,10 +1062,10 @@ class MainActivity : Activity() {
         web.saveState(out)
     }
 
-    override fun onPause() { super.onPause(); CookieManager.getInstance().flush(); pryamoy?.fon(true) }
+    override fun onPause() { super.onPause(); aktivno = false; CookieManager.getInstance().flush(); pryamoy?.fon(true) }
 
     override fun onResume() {
-        super.onResume(); PleerService.ui = this; pryamoy?.fon(false)
+        super.onResume(); aktivno = true; PleerService.ui = this; pryamoy?.fon(false)
         obnovlenie?.let { it.posleNastroek(); it.proverit(false) }
     }
 

@@ -278,7 +278,7 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
     }
 
 
-    private val gotovye = ArrayList<String>()
+    private val gotovye = ArrayList<Pair<String, String>>()
     private val h = Handler(Looper.getMainLooper())
     @Volatile private var vFone = false
 
@@ -297,7 +297,7 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
                         if (s == "success") {
                             val u = ssylki(d)
                             x.put("st", if (u.length() > 0) "gotovo" else "oshibka").put("urls", u)
-                            if (u.length() > 0) gotovye.add(x.optString("nazv", ""))
+                            if (u.length() > 0) gotovye.add(Pair(x.optString("nazv", ""), x.optString("tip", "")))
                             val tk = JSONArray()
                             try { treki(JSONObject(d.optString("resultJson", "{}")), tk, 0) } catch (ignored: Exception) {}
                             if (tk.length() > 0) x.put("treki", tk)
@@ -317,7 +317,7 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
                     }
                 }
                 if (izm) { synchronized(lock) { sohranitZadachi(z) }; js("pryamoyObnovit") }
-            if (vFone) for (n in gotovye) uvedomit(n)
+            if (vFone) for (n in gotovye) uvedomit(n.first, n.second)
         }
     }
 
@@ -327,18 +327,19 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
     private val fonShag = object : Runnable { override fun run() { if (!vFone || !estIdut()) return; proveritVse(); h.postDelayed(this, 20_000L) } }
     fun fon(on: Boolean) { vFone = on; h.removeCallbacks(fonShag); if (on) h.postDelayed(fonShag, 20_000L) }
 
-    private fun uvedomit(nazv: String) {
+    private fun uvedomit(nazv: String, tip: String) {
         try {
             val nm = a.getSystemService(NotificationManager::class.java)
             if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel("gotovo") == null)
                 nm.createNotificationChannel(NotificationChannel("gotovo", "Готовые работы", NotificationManager.IMPORTANCE_DEFAULT))
             val open = Intent(a, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             val pi = PendingIntent.getActivity(a, 11, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            val muz = nazv.startsWith("Песня") || nazv.startsWith("Минусовка") || nazv.startsWith("Кавер") || nazv.startsWith("Продление") || nazv.startsWith("Вокал")
+            val muz = tip == "muzyka" || nazv.startsWith("Песня") || nazv.startsWith("Минусовка") || nazv.startsWith("Кавер") || nazv.startsWith("Продление") || nazv.startsWith("Вокал")
+            val zag = when { muz -> "Песня готова"; tip == "kartinki" || tip == "kartinka" -> "Картинка готова"; tip == "video" -> "Видео готово"; else -> "Готово" }
             @Suppress("DEPRECATION")
             val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(a, "gotovo") else Notification.Builder(a)
             val n = b.setSmallIcon(R.drawable.ic_nota)
-                .setContentTitle(if (muz) "Песня готова" else "Готово")
+                .setContentTitle(zag)
                 .setContentText(if (nazv.isEmpty()) "Откройте приложение" else nazv)
                 .setContentIntent(pi).setAutoCancel(true).build()
             nm.notify(100 + (nazv.hashCode() and 0xffff), n)

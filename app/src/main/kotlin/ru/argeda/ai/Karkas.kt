@@ -413,6 +413,36 @@ class Karkas(private val a: MainActivity, val view: WebView) {
             }.start()
         }
 
+        /** Картинку, ролик или песню по ссылке — файлом в мессенджер (WhatsApp, Telegram): скачать в кэш и отдать в «Поделиться». */
+        @JavascriptInterface fun podelitsyaFaylom(url: String?, nazv: String?, mime: String?) {
+            if (url == null) return
+            val ras = Regex("\\.(jpe?g|png|webp|mp4|mov|mp3|wav|m4a)(\\?|$)", RegexOption.IGNORE_CASE).find(url)?.groupValues?.get(1)?.lowercase()
+                ?: when { mime?.startsWith("video/") == true -> "mp4"; mime?.startsWith("audio/") == true -> "mp3"; else -> "jpg" }
+            val tip = when (ras) { "png" -> "image/png"; "webp" -> "image/webp"; "mp4" -> "video/mp4"; "mov" -> "video/quicktime"; "mp3" -> "audio/mpeg"; "wav" -> "audio/wav"; "m4a" -> "audio/mp4"; else -> "image/jpeg" }
+            val chto = when { tip.startsWith("video/") -> "ролик"; tip.startsWith("audio/") -> "песню"; else -> "картинку" }
+            if (!url.startsWith("https://")) { podelitsya(url, tip); return }
+            a.runOnUiThread { Toast.makeText(a, "Готовлю $chto…", Toast.LENGTH_SHORT).show() }
+            Thread {
+                try {
+                    val dir = File(a.cacheDir, "share"); dir.mkdirs()
+                    for (old in dir.listFiles() ?: emptyArray()) if (System.currentTimeMillis() - old.lastModified() > 3600_000) old.delete()
+                    val imya = (nazv ?: "").replace(Regex("[^\\p{L}\\p{N} ._-]"), "").trim().take(50).ifEmpty { "ARGEDA AI" }
+                    val f = File(dir, "$imya.$ras")
+                    val c = URL(url).openConnection() as HttpURLConnection
+                    c.connectTimeout = 20000; c.readTimeout = 60000
+                    if (c.responseCode !in 200..299) throw Exception("код ${c.responseCode}")
+                    c.inputStream.use { inp -> f.outputStream().use { inp.copyTo(it) } }
+                    val i = Intent(Intent.ACTION_SEND).setType(tip)
+                        .putExtra(Intent.EXTRA_STREAM, CameraFileProvider.uriFor("share", f))
+                        .putExtra(Intent.EXTRA_TITLE, imya)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    a.runOnUiThread { try { a.startActivity(Intent.createChooser(i, "Отправить $chto")) } catch (e: Exception) { Toast.makeText(a, "Не получилось поделиться", Toast.LENGTH_SHORT).show() } }
+                } catch (e: Exception) {
+                    a.runOnUiThread { Toast.makeText(a, "Файл не скачался — проверьте интернет", Toast.LENGTH_LONG).show() }
+                }
+            }.start()
+        }
+
         @JavascriptInterface fun galereya() {
             a.runOnUiThread {
                 try { a.startActivity(Intent(Intent.ACTION_VIEW).setType("image/*").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

@@ -166,6 +166,7 @@ nav .plus svg{width:18px;height:18px;stroke:var(--na-akcente);stroke-width:2.6;f
 .tg{display:flex;align-items:center;gap:8px;font-size:15px}
 .tg input{width:20px;height:20px;accent-color:var(--a1)}
 .fl{display:flex;flex-wrap:wrap;gap:8px}
+.fi .fim{width:38px;height:38px;object-fit:cover;border-radius:7px;vertical-align:middle;margin-right:6px}.trd button svg{width:14px;height:14px;vertical-align:-2px}
 .fi{font-size:12.5px;background:var(--knopka);border:1px solid var(--liniya);border-radius:10px;padding:6px 8px}
 .fi button{color:var(--tekst2);font-weight:700;margin-left:4px}
 .fb{font-size:13.5px;font-weight:700;padding:9px 14px;border-radius:12px;border:1px dashed rgba(255,150,80,.6);color:var(--a1t)}
@@ -473,7 +474,7 @@ var S = {
       +'<div class="bnr">'+art(r.k)+'<span class="pod"><b>'+r.t+'</b><small>'+r.d+'</small></span></div>'
       +primeryRazdela(r.k)
       +(pzEst()&&r.k==='muzyka' ? muzykaHtml() : pzEst()&&RK[r.k] ? (function(){ pzKat=RK[r.k]; var z=pzList().filter(function(x){return x.tip===pzKat||(PZK[r.k]&&x.tip===PZK[r.k])}).reverse();
-          return '<h3 style="margin-top:4px">Модель</h3>'+formaHtml()+(z.length?'<h3>Мои запуски</h3>'+z.slice(0,6).map(pzKarta).join(''):'')
+          return '<h3 style="margin-top:4px">Модель</h3>'+formaHtml()+(z.length?'<h3>Мои запуски</h3>'+z.slice(0,6).map(pzKarta).join('')+(z.length>6?'<button class="btn b w" data-act="pz-vse">Все запуски ('+z.length+')</button>':''):'')
             +'<button class="btn b w" data-site="'+r.p+'" style="margin-top:14px">Открыть раздел на сайте'+(st==='net'?' (нужна связь)':'')+'</button>'; })() : '')
       +(pzEst()&&RK[r.k] ? '' : '<div class="uses">'+r.u.map(function(x){return '<span>'+x+'</span>'}).join('')+'</div>'
       +'<textarea id="prompt" placeholder="'+esc(r.ph)+'">'+esc(chern)+'</textarea>'
@@ -644,17 +645,80 @@ function plKlik(d,el){
 document.addEventListener('click',function(e){ var v=e.target.closest('#pleer .plv'); if(!v||!plA.duration) return; var r=v.getBoundingClientRect(); plA.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*plA.duration; });
 
 function pzKarta(x){
-  var st = x.st==='gotovo'?'Готово':x.st==='oshibka'?'Ошибка':'Создаётся…';
+  var st = x.st==='gotovo'?'Готово':x.st==='oshibka'?'Ошибка':'Создаётся…', muz=x.tip==='muzyka';
   var h='<div class="pzz"><span class="st '+x.st+'">'+st+'</span> <small>· '+esc(x.nazv||(PZT[x.tip]?PZT[x.tip].t:''))+' · '+kogda(x.t)+'</small><p>'+esc(x.prompt)+'</p>';
   if(x.st==='oshibka') h+='<small>'+esc(x.msg||'')+'</small>';
-  var trh=plTrekHtml(x); if(trh) h+=trh; else (x.urls||[]).forEach(function(u){
-    var m = /\.(mp4|mov)(\?|$)/i.test(u)?'video/mp4':/\.(mp3|wav|m4a)(\?|$)/i.test(u)?'audio/mpeg':'image/jpeg';
+  var trh=plTrekHtml(x), nm=String(x.prompt||x.nazv||'Картинка').slice(0,50); if(trh) h+=trh; else (x.urls||[]).forEach(function(u){
+    var m = /\.(mp4|mov)(\?|$)/i.test(u)?'video/mp4':/\.(mp3|wav|m4a)(\?|$)/i.test(u)?'audio/mpeg':'image/jpeg', a=' data-u="'+esc(u)+'" data-m="'+m+'" data-nm="'+esc(nm)+'"';
     h += m==='video/mp4' ? '<video class="rez" src="'+esc(u)+'" controls playsinline loop></video>'
-       : m==='audio/mpeg' ? '<audio src="'+esc(u)+'" controls></audio>' : '<img class="rez" src="'+esc(u)+'" alt="" data-act="zoom" data-u="'+esc(u)+'" data-t="'+esc(x.prompt||'')+'">';
-    h += '<div class="ry" style="margin-bottom:8px"><button data-act="pz-skachat" data-u="'+esc(u)+'" data-m="'+m+'">Сохранить в телефон</button></div>';
+       : m==='audio/mpeg' ? '<audio src="'+esc(u)+'" controls></audio>' : '<img class="rez" src="'+esc(u)+'" alt="" data-act="zoom" data-u="'+esc(u)+'" data-t="'+esc(x.prompt||'')+'" data-id="'+esc(x.id)+'">';
+    h += '<div class="trd" style="margin:0 0 10px"><button data-act="pz-skachat"'+a+'>Сохранить</button><button data-act="pz-podel"'+a+'>'+svg('share')+' Отправить</button>'
+      +(m==='image/jpeg'?'<button data-act="pz-izm"'+a+'>Изменить</button><button data-act="pz-fon"'+a+'>Убрать фон</button><button data-act="pz-chetko"'+a+'>Чётче</button>':'')+'</div>';
   });
-  h+='<div class="ry">'+(x.st!=='idet'?'<button data-act="pz-ubrat" data-id="'+esc(x.id)+'">Убрать</button>':'')+(x.st==='oshibka'?'<button data-act="pz-snova" data-id="'+esc(x.id)+'">Повторить</button>':'')+'</div></div>';
+  if(!muz) h+=pzParametry(x);
+  var mozhno=x.st!=='idet'&&(x.vhod||x.prompt);
+  h+='<div class="ry">'+(mozhno?(muz?'<button data-act="mz-povtor" data-tid="'+esc(x.id)+'" data-aid="">Повторить</button>':'<button data-act="pz-povtor" data-id="'+esc(x.id)+'">Повторить</button>'):'')+(x.st!=='idet'?'<button data-act="pz-ubrat" data-id="'+esc(x.id)+'">Убрать</button>':'')+'</div></div>';
   return h;
+}
+/* с чем запускали: описание, модель и настройки — как «Текст и параметры» у песен */
+function pzZnach(v){ if(v===true) return 'Да'; if(v===false) return 'Нет'; if(Array.isArray(v)) return v.join(', '); return ENUML[v]||String(v); }
+function pzParametry(x){
+  var v=x.vhod||{}, h=[], foto=[];
+  function st(n,z){ if(z!==''&&z!=null) h.push('<div class="mzpr"><small>'+esc(n)+'</small><span>'+esc(String(z))+'</span></div>'); }
+  if(x.nazv) st('Модель', x.nazv);
+  Object.keys(v).forEach(function(k){ var z=v[k];
+    if(/prompt$/.test(k)&&k!=='negative_prompt'||k==='text') return;
+    if(typeof z==='string'&&/^https?:\/\//.test(z)){ foto.push(z); return; }
+    if(Array.isArray(z)&&z.length&&/^https?:\/\//.test(String(z[0]))){ foto=foto.concat(z); return; }
+    if(z!==null&&typeof z==='object') return;
+    st(RUS[k]||k.replace(/_/g,' '), pzZnach(z)); });
+  var tx=v.prompt||v.text||x.prompt||'';
+  if(!h.length&&!tx) return '';
+  return '<details class="mzd mzpar"><summary>Описание и параметры</summary>'+h.join('')
+    +(foto.length?'<div class="mzpr"><small>Исходные файлы</small><span class="fl">'+foto.slice(0,8).map(function(u){return '<span class="fi">'+fiMini(u)+esc(u.split('/').pop().split('?')[0].slice(-18))+'</span>'}).join('')+'</span></div>':'')
+    +(tx?'<div class="pltx">'+esc(tx).replace(/\n/g,'<br>')+'</div>':'')+'</details>';
+}
+function fiMini(u){ return /\.(jpe?g|png|webp)(\?|$)/i.test(u)?'<img class="fim" src="'+esc(u)+'" alt="" onerror="this.remove()">':''; }
+/* переключатель «да/нет»: показываем то, что модель возьмёт на самом деле, и ровно это отправляем */
+function boolUm(f){ if(f.v!=null) return f.v===true||f.v==='true'; var d=String(f.d||''), m=d.match(/default(?:s| value)?\s*(?:to|is|:)?\s*[`(]*\s*(true|false)/i);
+  if(m) return m[1].toLowerCase()==='true'; return /enabled by default/i.test(d); }
+/* примерная цена в кредитах сервиса — для основных моделей картинок */
+function pzCena(m,o){ var id=m.m, r=String(o.resolution||o.size||'1K').toUpperCase(), n=parseInt(o.num_images||o.n||o.max_images||1,10)||1, c=null;
+  if(/^nano-banana-2(-1)?$/.test(id)) c={'1K':4,'2K':6,'4K':9}[r]||4;
+  else if(id==='nano-banana-pro') c=r==='4K'?24:18;
+  else if(/^gpt-image-2-5-/.test(id)) c={'1K':6,'2K':10,'4K':16}[r]||6;
+  else if(/^flux-2\/pro-/.test(id)) c=r==='2K'?7:5;
+  else if(/^seedream\/5-pro-/.test(id)) c=o.quality==='high'?14:7;
+  return c==null?null:c*n; }
+function kredity(c){ var d=c%10, d2=c%100; return c+' '+(d===1&&d2!==11?'кредит':d>=2&&d<=4&&(d2<12||d2>14)?'кредита':'кредитов'); }
+function cenaTekst(m){ if(!m) return ''; var c=pzCena(m,sobrat(m).o); return c?'Примерно '+kredity(c)+' за запуск':'Спишутся кредиты с вашего счёта сервиса — цена зависит от модели'; }
+function pzCenaObn(){ var e=document.getElementById('pz-cena'), m=tekMod(); if(e&&m) e.textContent=cenaTekst(m); }
+function pzSohrForma(){ try{ localStorage.setItem('pz-forma',JSON.stringify({m:pzMod,v:pzVal})); }catch(e){} }
+/* открыть форму модели с уже подставленными значениями */
+function pzKForme(c,msg){
+  zakrytProsmotr(); PL.polnyy=false; try{ plRis(); }catch(e){}
+  var r={kartinki:'kartinki',video:'video',golos:'golos'}[c];
+  if(r&&!(cur==='razdel'&&RK[curK]===c)) show('razdel',r); else if(!r&&cur!=='pryamoy') show('pryamoy'); else redraw();
+  setTimeout(function(){ var f=document.querySelector('.forma')||document.querySelector('.pz'); if(f) f.scrollIntoView({block:'start'}); var p=document.getElementById('f-prompt'); if(p&&!p.value){ p.focus(); } },80);
+  if(msg) toast(msg);
+}
+function pzPovtor(id){
+  var x=pzList().filter(function(y){return y.id===id})[0]; if(!x){ toast('Запуск не найден'); return; }
+  if(x.tip==='muzyka'){ mzPovtorit(x.id,''); return; }
+  var mid=x.model, v=x.vhod;
+  if(!mid){ mid=x.tip==='video'?'wan/3-0-video':'nano-banana-2-1'; v={prompt:x.prompt||''}; }
+  var m=MOD.filter(function(y){return y.m===mid})[0]; if(!m){ toast('Этой модели больше нет в списке'); return; }
+  pzKat=m.c; pzMod[m.c]=m.m; pzVal[m.m]=JSON.parse(JSON.stringify(v||{})); pzSohrForma();
+  pzKForme(m.c,'Всё как в том запуске — поменяйте что нужно и нажмите «Создать»');
+}
+function pzIzmenit(u){
+  var m=MOD.filter(function(y){return y.m==='nano-banana-2-1'})[0]; if(!m){ toast('Модель для правки не найдена'); return; }
+  pzKat='kartinki'; pzMod.kartinki=m.m; pzVal[m.m]={prompt:'',image_input:[u],aspect_ratio:'auto',resolution:'1K',output_format:'jpg'}; pzSohrForma();
+  pzKForme('kartinki','Картинка добавлена — напишите, что на ней изменить');
+}
+function pzObrabotka(id,u,nazv,vopros){
+  var m=MOD.filter(function(y){return y.m===id})[0]; if(!m){ toast('Модель не найдена'); return; }
+  sprosit(vopros+' Спишутся кредиты с вашего счёта сервиса.',function(){ P.zapuskModel(m.m, JSON.stringify({image:u}), nazv, 'kartinki', nazv); toast('Запущено — готовая появится в «Моих запусках»'); });
 }
 /* ---------- Студия: все модели по своему ключу ---------- */
 var MOD = window.MODELI || [];
@@ -664,10 +728,11 @@ function topI(m){ for(var i=0;i<TOP.length;i++) if(m.indexOf(TOP[i])===0) return
 var CHATM=[['claude-sonnet-5-5','Claude Sonnet 5.5'],['claude-opus-5-5','Claude Opus 5.5'],['claude-haiku-5-5','Claude Haiku 5.5']];
 var pzKat='video', pzMod={}, pzVal={}, pzPoisk='', pzZagrId=0, pzZagrKuda={}, pzChatM='claude-sonnet-5-5', pzChatH=[], pzChatZhdu=false;
 try{ pzChatH = JSON.parse(localStorage.getItem('pz-chat')||'[]'); }catch(e){}
+try{ var pzF=JSON.parse(localStorage.getItem('pz-forma')||'{}'); if(pzF.m) pzMod=pzF.m; if(pzF.v) pzVal=pzF.v; }catch(e){}
 function modeliKat(k){ return MOD.filter(function(x){return k==='guby' ? (x.c!=='obrabotka' && /avatar|omnihuman|infinitalk|speech-to-video|lip/i.test(x.m)) : x.c===k}).sort(function(a,b){ return topI(a.m)-topI(b.m) || a.n.localeCompare(b.n); }); }
 function tekMod(){ var l=modeliKat(pzKat); var id=pzMod[pzKat]; for(var i=0;i<l.length;i++) if(l[i].m===id) return l[i]; return l[0]; }
 function polVal(m,k){ var o=pzVal[m.m]||(pzVal[m.m]={}); return o[k]; }
-function setVal(m,k,v){ (pzVal[m.m]||(pzVal[m.m]={}))[k]=v; }
+function setVal(m,k,v){ (pzVal[m.m]||(pzVal[m.m]={}))[k]=v; pzSohrForma(); }
 function jeUrl(f){ return /url|image|video|audio|file|mask/i.test(f.k) && !/format|count|num|resolution|aspect|ratio|enable|type/i.test(f.k); }
 function dlinniy(f){ return /^(prompt|text|lyrics|style|negative_prompt|description|descriptions|full_lyrics|tags|negative_tags|content)$/i.test(f.k); }
 function glavnoe(f){ return f.r || /prompt|text|lyrics|aspect|resolution|duration|image|video|audio|voice|style|title|instrumental|custom_mode/i.test(f.k); }
@@ -676,6 +741,7 @@ Object.assign(RUS,{nsfw_checker:'Фильтр 18+',image_size:'Размер ка
 var HINT={'ai-music-api/generate':{prompt:'О чём песня и какое настроение. Без «Своего режима» этого достаточно — слова и музыку придумает ИИ.',custom_mode:'Включите, чтобы задать свои слова, стиль и название.',lyrics:'Свои слова песни (в «Своём режиме»). Можно размечать [Куплет], [Припев].',style:'Жанр, инструменты, настроение. Например: весёлый поп, гитара, женский вокал.',title:'Название трека (в «Своём режиме»).',instrumental:'Только музыка, без пения.',model:'V6 — основная, V6 Мини — быстрее, V6 Дикий — смелее и необычнее.',negative_tags:'Что исключить: например, рок, барабаны.',vocal_gender:'Кто поёт. «Авто» — решит ИИ.',duration:'Длина трека от 10 до 360 секунд. Пусто — ИИ решит сам.',style_weight:'0–1: насколько строго держаться стиля.',weirdness_constraint:'0–1: чем больше, тем необычнее.',audio_weight:'0–1: насколько опираться на аудио-образец.',variety:'0–4: разнообразие вариантов.',image_urls:'До 5 картинок для настроения (без «Своего режима»).',audio_urls:'Аудио-образец 6–30 секунд (без «Своего режима»).',video_urls:'Одно видео, под которое подобрать музыку (без «Своего режима»).',persona_id:'Номер сохранённого голоса, если есть. Обычно пусто.',persona_model:'По стилю или по голосу.'}};
 var ENUML={m:'Мужской',f:'Женский',style_persona:'По стилю',voice_persona:'По голосу',V6:'V6',V6_MINI:'V6 Мини',V6_WILD:'V6 Дикий','true':'Да','false':'Нет',auto:'Авто',AUTO:'Авто',adaptive:'Авто',fun:'Весело',normal:'Обычно',spicy:'Смело',TURBO:'Быстро',BALANCED:'Сбалансированно',QUALITY:'Качество',REALISTIC:'Реалистично',FICTION:'Фантазия',square:'Квадрат',square_hd:'Квадрат HD',portrait_4_3:'Вертикально 3:4',portrait_16_9:'Вертикально 9:16',portrait_3_2:'Вертикально 2:3',landscape_4_3:'Горизонтально 4:3',landscape_16_9:'Горизонтально 16:9',landscape_3_2:'Горизонтально 3:2',landscape_21_9:'Горизонтально 21:9',GENERAL:'Общий',DESIGN:'Дизайн',std:'Стандарт',pro:'Про',image:'Картинка',video:'Видео',none:'Нет',regular:'Обычно',basic:'Базовый',ultra:'Ультра',lite:'Лёгкий',medium:'Среднее',high:'Высокое',transparent:'Прозрачный',opaque:'Непрозрачный',origin:'Как в оригинале'};
 Object.assign(ENUML,{"EkK5I93UQWFDigLMpZcX": "James", "Z3R5wn05IrDiVCyEkUrK": "Arabella", "NNl6r8mD7vthiJatiJt1": "Bradford", "YOq2y2Up4RgXP2HyXjE5": "Xavier", "B8gJV1IhpuegLxdpXFOE": "Kuon", "2zRM7PkgwBPiau2jvVXc": "Monika Sogam", "1SM7GgM6IMuvQlz2BwM3": "Mark", "5l5f8iK3YPeGga21rQIX": "Adeline", "scOwDtmlUjD3prqpp97I": "Sam", "NOpBlnGInO9m6vDvFkFC": "Spuds Oxley", "BZgkqPqms7Kj9ulSkVzn": "Eve", "DGzg6RaUqxGRTHSBjfgF": "Brock", "x70vRnQBMBu4FAYhjJbO": "Nathan", "Sm1seazb4gs7RSlUVw7c": "Anika", "P1bg08DkjqiVEzOn76yG": "Viraj", "qDuRKMlYmrm8trt5QyBn": "Taksh", "qXpMhyvQqiRxWQs4qSSB": "Horatius", "TX3LPaxmHKxFdv7VOQHJ": "Liam", "N2lVS1w4EtoT3dr4eOWO": "Callum", "FGY2WhTYpPnrIDTdsKH5": "Laura", "kPzsL2i3teMYv0FxEYQ6": "Brittney", "UgBBYS2sOqTuMpoF3BR0": "Mark", "hpp4J3VqNfWAUOO0d1Us": "Bella", "nPczCjzI2devNBz1zQrb": "Brian", "uYXf8XasLslADfZ2MB4u": "Hope", "gs0tAILXbY5DNrJrsM6F": "Jeff", "DTKMou8ccj1ZaWGBiotd": "Jamahal", "vBKc2FfBKJfcZNyEt1n6": "Finn", "DYkrAHD8iwork3YSUBbs": "Tom", "56AoDkrOh6qfVPDXZ7Pt": "Cassidy", "eR40ATw9ArzDf9h3v7t7": "Addison 2.0", "g6xIsTj2HwM6VR4iXFCw": "Jessica Anne Bogart", "lcMyyd2HUfFzxdCaC4Ta": "Lucy", "6aDn1KB0hjpdcocrUkmq": "Tiffany", "Sq93GQT4X1lKDXsQcixO": "Felix", "flHkNRp1BlvT73UL6gyz": "Jessica Anne Bogart", "9yzdeviXkFddZ4Oz8Mok": "Lutz", "pPdl9cQBQq4p6mRkZy2Z": "Emma", "zYcjlYFOd3taleS0gkk3": "Edward", "nzeAacJi50IvxcyDnMXa": "Marshal", "ruirxsoakN0GWmGNIo04": "John Morgan", "TC0Zp7WVFzhA8zpTlRqV": "Aria", "ljo9gAlSqKOvF6D8sOsX": "Viking Bjorn", "8JVbfL6oEdmuxKn5DK2C": "Johnny Kid", "iCrDUkL56s3C8sCRl7wb": "Hope", "wJqPPQ618aTW29mptyoc": "Ana Rita", "EiNlNiXeDU1pqqOPrYMO": "John Doe", "4YYIPFl9wE5c4L2eu2Gb": "Burt Reynolds™", "6F5Zhi321D3Oq7v1oNT4": "Hank", "YXpFCvM1S3JbWEJhoskW": "Wyatt", "LG95yZDEHg6fCZdQjLqj": "Phil", "CeNX9CMwmxDxUF5Q2Inm": "Johnny Dynamite", "aD6riP1btT197c6dACmy": "Rachel M", "mtrellq69YZsNwzUSyXh": "Rex Thunder", "dHd5gvgSOzSfduK4CvEg": "Ed", "eVItLK1UvXctxuaRV2Oq": "Jean", "esy0r39YPLQjOczyOib8": "Britney", "Tsns2HvNFKfGiNjllgqo": "Sven", "1U02n4nD6AdIZ9CjF053": "Viraj", "AeRdCCKzvd23BpJoofzx": "Nathaniel", "LruHrtVF6PSyGItzMNHS": "Benjamin", "1wGbFxmAM3Fgw63G1zZJ": "Allison", "hqfrgApggtO1785R4Fsn": "Theodore HQ", "MJ0RnG71ty4LH3dvNfSd": "Leon"});
+['nano-banana-2-1','nano-banana-2','nano-banana-pro'].forEach(function(k){ HINT[k]={prompt:'Что нарисовать. Если добавили фото — что на нём изменить: «замени фон на море», «убери человека слева». Надписи модель рисует сама — напишите их в кавычках.',image_input:'Необязательно. Добавьте фото — модель изменит его по описанию или возьмёт за образец.',aspect_ratio:'«Авто» — как у добавленного фото или на выбор модели.'}; });
 var NAZV={'ai-music-api/generate':'Песня — Suno V6','elevenlabs/audio-isolation':'Очистка голоса от шума','elevenlabs/text-to-speech-multilingual-v2':'Озвучка текста — многоязычная','elevenlabs/text-to-speech-turbo-2-5':'Озвучка текста — быстрая','recraft/remove-background':'Удалить фон','recraft/crisp-upscale':'Улучшить чёткость фото','topaz/image-upscale':'Увеличить фото (Topaz)','topaz/video-upscale':'Улучшить видео (Topaz)','grok-imagine/upscale':'Улучшить видео (Grok)','grok-imagine-image-2-0/segment-edit':'Правка части фото (Grok)','grok-imagine-image-2-0/segment-map':'Карта областей фото (Grok)','omnihuman-1-5/human-identification':'Найти людей на фото','omnihuman-1-5/subject-detection':'Найти объекты на фото','seedream/5-flash-layer-decomposition':'Разложить фото на слои (быстро)','seedream/5-pro-layer-decomposition':'Разложить фото на слои (Про)'};
 var NZR=[[/ ?-? ?Text to Video/i,' — из текста'],[/ ?-? ?Image to Video/i,' — из фото'],[/ ?-? ?Text to Image/i,' — из текста'],[/ ?-? ?Image to Image/i,' — правка фото'],[/ ?-? ?Edit Image/i,' — правка фото'],[/ Reference To Video/i,' — по образцам'],[/ Keyframe To Video/i,' — по кадрам'],[/ video to video lip sync/i,' — синхронизация губ'],[/ ?-? ?Video to Video/i,' — видео в видео'],[/ Speech to Video/i,' — речь в видео'],[/ - From Audio/i,' — по аудио'],[/ AI Avatar/i,' Аватар'],[/ - Video$/i,' — видео'],[/^Bytedance - /i,'Bytedance ']];
 MOD.forEach(function(m){ if(NAZV[m.m]) m.n=NAZV[m.m]; else NZR.forEach(function(r){ m.n=m.n.replace(r[0],r[1]); }); });
@@ -686,14 +752,14 @@ function pole(m,f){
   var hn=(HINT[m.m]||{})[f.k]||(ruTekst(f.d)?f.d:''), dsc=hn?'<small class="pd">'+esc(hn)+'</small>':'';
   if(f.e){ var pust=!f.r&&f.v==null; if(v==null) v=(f.v!=null?f.v:(pust?'':f.e[0]));
     h='<select id="'+id+'" data-fk="'+f.k+'">'+(pust?'<option value=""'+(v===''?' selected':'')+'>Авто</option>':'')+f.e.map(function(o){return '<option value="'+esc(o)+'"'+(String(o)===String(v)?' selected':'')+'>'+esc(ENUML[o]||o)+'</option>'}).join('')+'</select>'; }
-  else if(f.t==='boolean'){ if(v==null) v=!!f.v; h='<label class="tg"><input type="checkbox" data-fk="'+f.k+'"'+(v?' checked':'')+'> да</label>'; }
+  else if(f.t==='boolean'){ if(v==null) v=boolUm(f); h='<label class="tg"><input type="checkbox" data-fk="'+f.k+'"'+(v?' checked':'')+'> да</label>'; }
   else if(f.t==='integer'||f.t==='number'){ h='<input type="number" id="'+id+'" data-fk="'+f.k+'" value="'+esc(v!=null?v:(f.v!=null?f.v:''))+'"'+(f.mn!=null?' min="'+f.mn+'"':'')+(f.mx!=null?' max="'+f.mx+'"':'')+(f.t==='number'?' step="any"':'')+' placeholder="'+(f.mn!=null&&f.mx!=null?f.mn+'–'+f.mx:'')+'">'; }
   else if(f.t==='array' && jeUrl(f)){ var a=v||[];
-    h='<div class="fl">'+a.map(function(u,i){return '<span class="fi">'+esc(u.split('/').pop().slice(-22))+' <button data-act="pz-fdel" data-k="'+f.k+'" data-i="'+i+'">×</button></span>'}).join('')
+    h='<div class="fl">'+a.map(function(u,i){return '<span class="fi">'+fiMini(u)+esc(u.split('/').pop().slice(-22))+' <button data-act="pz-fdel" data-k="'+f.k+'" data-i="'+i+'">×</button></span>'}).join('')
       +(a.length<(f.mi||10)?'<button class="fb" data-act="pz-file" data-k="'+f.k+'" data-mn="1">+ Файл</button>':'')+'</div>'; }
   else if(f.t==='array'){ h='<input type="text" id="'+id+'" data-fk="'+f.k+'" data-arr="1" value="'+esc((v||[]).join(', '))+'" placeholder="через запятую">'; }
   else if(f.t==='object'){ return ''; }
-  else if(jeUrl(f)){ h='<div class="fl">'+(v?'<span class="fi">'+esc(String(v).split('/').pop().slice(-22))+' <button data-act="pz-fdel" data-k="'+f.k+'">×</button></span>':'<button class="fb" data-act="pz-file" data-k="'+f.k+'">+ Файл</button>')+'</div>'; }
+  else if(jeUrl(f)){ h='<div class="fl">'+(v?'<span class="fi">'+fiMini(String(v))+esc(String(v).split('/').pop().slice(-22))+' <button data-act="pz-fdel" data-k="'+f.k+'">×</button></span>':'<button class="fb" data-act="pz-file" data-k="'+f.k+'">+ Файл</button>')+'</div>'; }
   else if(dlinniy(f)){ h='<textarea id="'+id+'" data-fk="'+f.k+'" style="min-height:'+(f.k==='prompt'||f.k==='text'||f.k==='lyrics'?120:70)+'px">'+esc(v||'')+'</textarea>'; }
   else { h='<input type="text" id="'+id+'" data-fk="'+f.k+'" value="'+esc(v!=null?v:(f.v!=null?f.v:''))+'">'; }
   return '<div class="pf">'+nm+h+dsc+'</div>';
@@ -702,11 +768,12 @@ function sobrat(m){
   var o={}, prm='';
   m.f.forEach(function(f){
     var v=polVal(m,f.k);
-    if(v==null){ if(f.e) v=(f.v!=null?f.v:(f.r?f.e[0]:null)); else if(f.t==='boolean') v=(f.v!=null?f.v:(f.r?false:null)); else if(f.v!=null&&f.r) v=f.v; }
+    if(v==null){ if(f.t==='boolean') v=boolUm(f); else if(f.e) v=(f.v!=null?f.v:(f.r?f.e[0]:null)); else if(f.v!=null&&f.r) v=f.v; }
+    if(f.t==='boolean'){ if(v==='true') v=true; else if(v==='false') v=false; else if(v!=null&&v!=='') v=!!v; }
     if(v==null||v===''||(Array.isArray(v)&&!v.length)) return;
     if(f.t==='integer') v=parseInt(v,10); else if(f.t==='number') v=parseFloat(v);
     if((f.t==='integer'||f.t==='number')&&isNaN(v)) return;
-    if(f.e && f.t!=='string' && !isNaN(+v)) v=+v;
+    if(f.e && f.t!=='string' && f.t!=='boolean' && !isNaN(+v)) v=+v;
     o[f.k]=v; if(!prm && /prompt|text|lyrics/.test(f.k) && typeof v==='string') prm=v;
   });
   var net=m.f.filter(function(f){return f.r && o[f.k]==null && f.t!=='object'}).map(function(f){return f.k});
@@ -722,7 +789,8 @@ function formaHtml(){
       +(pzChatH.length?'<button class="btn b w" data-act="pz-chat-new">Новый разговор</button>':'');
   } else {
     var l=modeliKat(pzKat), m=tekMod();
-    h+='<div class="pz"><select data-act2="model">'+l.map(function(x){return '<option value="'+esc(x.m)+'"'+(x===m?' selected':'')+'>'+esc(x.n)+'</option>'}).join('')+'</select></div>';
+    var opt=function(x){return '<option value="'+esc(x.m)+'"'+(x===m?' selected':'')+'>'+esc(x.n)+'</option>'}, lt=l.filter(function(x){return topI(x.m)<99}), lo=l.filter(function(x){return topI(x.m)>=99});
+    h+='<div class="pz"><select data-act2="model">'+(lt.length&&lo.length?'<optgroup label="Лучшие">'+lt.map(opt).join('')+'</optgroup><optgroup label="Все остальные">'+lo.map(opt).join('')+'</optgroup>':l.map(opt).join(''))+'</select></div>';
     if(m && /text-to-speech/.test(m.m)) h+='<p class="sm" style="color:var(--tekst3);margin:6px 0">Озвучка сейчас может долго стоять в очереди. Если за 30 минут не придёт — попробуйте позже.</p>';
     if(m){
       var po=PORYADOK[m.m], gl, dop;
@@ -730,7 +798,7 @@ function formaHtml(){
       else { gl=m.f.filter(glavnoe); dop=m.f.filter(function(f){return !glavnoe(f)}); }
       h+='<div class="forma">'+gl.map(function(f){return pole(m,f)}).join('')
         +(dop.length?'<details><summary>Дополнительно ('+dop.length+')</summary>'+dop.map(function(f){return pole(m,f)}).join('')+'</details>':'')+'</div>'
-        +'<button class="btn a w" data-act="pz-start">Создать</button>';
+        +'<button class="btn a w" data-act="pz-start">Создать</button><div class="hint" id="pz-cena" style="margin-top:6px">'+esc(cenaTekst(m))+'</div>';
     }
   }
   return h;
@@ -761,8 +829,8 @@ document.addEventListener('click',function(e){ var b=e.target.closest('[data-dlg
 document.addEventListener('input',function(e){ var t=e.target; if(!t.dataset||!t.dataset.fk||(cur!=='pryamoy'&&cur!=='razdel')) return; var m=tekMod(); if(!m) return;
   setVal(m,t.dataset.fk, t.type==='checkbox'?t.checked:t.dataset.arr?t.value.split(',').map(function(s){return s.trim()}).filter(Boolean):t.value); });
 document.addEventListener('change',function(e){ var t=e.target; if(!t.dataset) return;
-  if(t.dataset.fk && (cur==='pryamoy'||cur==='razdel')){ var m=tekMod(); if(m) setVal(m,t.dataset.fk, t.type==='checkbox'?t.checked:t.value); return; }
-  if(t.dataset.act2==='model'){ pzMod[pzKat]=t.value; redraw(); }
+  if(t.dataset.fk && (cur==='pryamoy'||cur==='razdel')){ var m=tekMod(); if(m) setVal(m,t.dataset.fk, t.type==='checkbox'?t.checked:t.value); pzCenaObn(); return; }
+  if(t.dataset.act2==='model'){ pzMod[pzKat]=t.value; pzSohrForma(); redraw(); }
   if(t.dataset.act2==='chatm'){ pzChatM=t.value; }
   if(t.id==='pz-fayl'){ var fs=[].slice.call(t.files||[]); t.value=''; fs.forEach(zagruzitFayl); }
 });
@@ -1150,7 +1218,7 @@ var RK={video:'video',kartinki:'kartinki',muzyka:'muzyka',golos:'golos',guby:'gu
 var pzGot=-1;
 function pzGotovo(){ return pzList().filter(function(x){return x.st==='gotovo'}).length; }
 window.pryamoyObnovit=function(){
-  var g=pzGotovo(); if(pzGot>=0 && g>pzGot) toast('Готово! Результат в «Студии»'); pzGot=g;
+  var g=pzGotovo(); if(pzGot>=0 && g>pzGot) toast(cur==='razdel'||cur==='pryamoy'?'Готово! Результат — в «Моих запусках» ниже':'Готово! Результат в «Студии»'); pzGot=g;
   if(cur==='pryamoy'||cur==='fayly'||cur==='razdel') redraw();
 };
 setInterval(function(){ if(document.hidden||!P) return; if(pzGot<0) pzGot=pzGotovo(); if(pzList().some(function(x){return x.st==='idet'})) P.proverit(); }, 6000);
@@ -1160,13 +1228,13 @@ function pzKlik(d){
   if(a==='pz-sohr'){ var v=(document.getElementById('pz-k').value||'').trim(); if(P.sohranit(v)){ toast('Ключ сохранён в телефоне'); show('pryamoy'); } else toast('Не получилось сохранить ключ'); return true; }
   if(a==='pz-udal'){ sprosit('Удалить ключ из телефона? Студия выключится.',function(){ P.udalit(); toast('Ключ удалён'); show('kabinet'); }); return true; }
   if(a==='pz-kat'){ pzKat=d.v; redraw(); return true; }
-  if(a==='pz-file'){ pzZagrKuda.k=d.k; var fi=document.getElementById('pz-fayl'); fi.multiple=!!d.mn; fi.click(); return true; }
+  if(a==='pz-file'){ pzZagrKuda.k=d.k; var fi=document.getElementById('pz-fayl'); fi.multiple=!!d.mn; fi.accept=/video/i.test(d.k)?'video/*':/audio/i.test(d.k)?'audio/*':/image|input_urls|mask|frame/i.test(d.k)?'image/*':''; fi.click(); return true; }
   if(a==='pz-fdel'){ var mm=tekMod(); if(mm){ if(d.i!=null){ var ar=(polVal(mm,d.k)||[]).slice(); ar.splice(+d.i,1); setVal(mm,d.k,ar); } else setVal(mm,d.k,null); redraw(); } return true; }
   if(a==='pz-start'){ var m=tekMod(); if(!m) return true; var sb=sobrat(m);
     if(m && m.m==='ai-music-api/generate' && sb.o.custom_mode && (!sb.o.title||!(sb.o.style||sb.o.lyrics||sb.o.negative_tags))){ toast('В «Своём режиме» нужны название и стиль или слова'); return true; }
     if(m.m==='ai-music-api/generate' && !sb.o.custom_mode && !sb.o.prompt){ toast('Напишите, о чём песня'); return true; }
     if(sb.net.length){ toast('Заполните: '+sb.net.map(function(k){return RUS[k]||k}).join(', ')); return true; }
-    sprosit('Запустить «'+m.n+'»? Спишутся кредиты с вашего счёта сервиса.',function(){ P.zapuskModel(m.m, JSON.stringify(sb.o), m.n, m.c, sb.prm); toast('Запущено — результат появится ниже'); });
+    var cn=pzCena(m,sb.o); sprosit('Запустить «'+m.n+'»? '+(cn?'Спишется примерно '+kredity(cn)+'.':'Спишутся кредиты с вашего счёта сервиса.'),function(){ P.zapuskModel(m.m, JSON.stringify(sb.o), m.n, m.c, sb.prm); toast('Запущено — результат появится ниже'); });
     return true; }
   if(a==='pz-chat'){ var q=(document.getElementById('prompt').value||'').trim(); if(!q||pzChatZhdu) return true;
     pzChatH.push({role:'user',content:q}); pzChatZhdu=true; document.getElementById('prompt').value=''; P.chat(pzChatM, JSON.stringify(pzChatH.slice(-20))); redraw(); return true; }
@@ -1185,7 +1253,12 @@ function pzKlik(d){
       pzKat=d.k==='kino'?'video':d.k==='rabota'?'kartinki':d.k; toast('Запущено — результат появится здесь'); show('pryamoy'); }); return true;
   }
   if(a==='pz-ubrat'){ P.ubrat(d.id); redraw(); return true; }
-  if(a==='pz-snova'){ var x=pzList().filter(function(y){return y.id===d.id})[0]; if(x){ pzTip=x.tip; show('pryamoy'); var q=document.getElementById('prompt'); if(q) q.value=x.prompt; } return true; }
+  if(a==='pz-snova'||a==='pz-povtor'){ pzPovtor(d.id); return true; }
+  if(a==='pz-izm'){ pzIzmenit(d.u); return true; }
+  if(a==='pz-fon'){ pzObrabotka('recraft/remove-background',d.u,'Без фона','Убрать фон у этой картинки?'); return true; }
+  if(a==='pz-chetko'){ pzObrabotka('recraft/crisp-upscale',d.u,'Чётче','Сделать картинку чётче и крупнее?'); return true; }
+  if(a==='pz-podel'){ if(K&&K.podelitsyaFaylom) K.podelitsyaFaylom(d.u, d.nm||'', d.m||''); else if(K&&K.podelitsyaPesnei&&/^audio/.test(d.m||'')) K.podelitsyaPesnei(d.u, d.nm||'Песня'); else toast('Обновите приложение'); return true; }
+  if(a==='pz-vse'){ pzNazad=curK; show('pryamoy'); return true; }
   if(a==='pz-skachat'){ fZapomnit(d.u); P.skachat(d.u, d.m); return true; }
   return false;
 }
@@ -1220,7 +1293,8 @@ document.addEventListener('click',function(e){
   var t=e.target.closest('[data-pm],[data-go],[data-r],[data-site],[data-act],[data-z],[data-zd],[data-f],[data-fs],[data-kop]'); if(!t) return;
   var d=t.dataset;
   if(d.pm!=null){ prosmotr(+d.pm); return; }
-  if(d.act==='zoom'){ zoomOtkryt(d.u,d.t,'Готово','<button class="btn a w" data-act="pz-skachat" data-u="'+esc(d.u)+'" data-m="image/jpeg">Сохранить в телефон</button>'); return; }
+  if(d.act==='zoom'){ var za=' data-u="'+esc(d.u)+'" data-m="image/jpeg" data-nm="'+esc(String(d.t||'Картинка').slice(0,50))+'"';
+    zoomOtkryt(d.u,d.t,'Готово','<button class="btn a w" data-act="pz-skachat"'+za+'>Сохранить в телефон</button><button class="btn b w" data-act="pz-podel"'+za+'>Отправить</button><button class="btn b w" data-act="pz-izm"'+za+'>Изменить эту картинку</button>'+(d.id?'<button class="btn b w" data-act="pz-povtor" data-id="'+esc(d.id)+'">Повторить с теми же настройками</button>':'')); return; }
   if(d.act!=='takoy' && t.closest('#pros')) zakrytProsmotr();
   if(d.go){ show(d.go); return; }
   if(d.r){ if(podel){ try{sessionStorage.setItem('ch-'+d.r,podel)}catch(x){} podel=null; } show('razdel',d.r); return; }

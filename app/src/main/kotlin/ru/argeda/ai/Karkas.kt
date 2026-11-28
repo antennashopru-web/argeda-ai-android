@@ -443,6 +443,16 @@ class Karkas(private val a: MainActivity, val view: WebView) {
             }.start()
         }
 
+        @JavascriptInterface fun kopirovat(t: String?) { if (t != null) a.runOnUiThread { a.kopirovatTekst(t) } }
+
+        @JavascriptInterface fun podelitsyaTekstom(t: String?) {
+            if (t.isNullOrEmpty()) return
+            a.runOnUiThread {
+                try { a.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, t), "Отправить текст")) }
+                catch (e: Exception) { Toast.makeText(a, "Не получилось поделиться", Toast.LENGTH_SHORT).show() }
+            }
+        }
+
         @JavascriptInterface fun galereya() {
             a.runOnUiThread {
                 try { a.startActivity(Intent(Intent.ACTION_VIEW).setType("image/*").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

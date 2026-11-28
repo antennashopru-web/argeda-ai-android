@@ -1,12 +1,6 @@
 package ru.argeda.ai
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.content.SharedPreferences
@@ -67,6 +61,8 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
             402 -> "На счёте закончились кредиты"
             429 -> "Слишком много запросов, подождите минуту"
             455 -> "Сервис на обслуживании, попробуйте позже"
+            400, 422 -> "Сервис не принял настройки" + (if (msg.isNullOrEmpty()) "" else ": " + chisto(msg))
+            in 500..599 -> "Сервис временно не отвечает, попробуйте позже"
             else -> "Ошибка " + code + (if (msg.isNullOrEmpty()) "" else ": " + chisto(msg))
         }
 
@@ -213,7 +209,9 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
         val kod = c.responseCode
         val s = chitat(c, kod)
         c.disconnect()
-        val j = try { JSONObject(s) } catch (e: Exception) { throw Exception("Сервис ответил $kod") }
+        val j = try { JSONObject(s) } catch (e: Exception) {
+            throw Exception(if (kod >= 500) "Сервис временно не отвечает, попробуйте позже" else "Сервис ответил непонятно (код $kod), попробуйте ещё раз")
+        }
         val code = j.optInt("code", kod)
         if (code != 200) throw Exception(oshibka(code, j.optString("msg", "")))
         return j
@@ -263,6 +261,7 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
     private fun dobavit(x: JSONObject) {
         synchronized(lock) { val z = zadachi(); z.put(x); sohranitZadachi(z) }
         js("pryamoyObnovit")
+        h.post { h.removeCallbacks(fonShag); h.postDelayed(fonShag, 20_000L) }
     }
 
     private fun sozdat(x: JSONObject, telo: JSONObject) {
@@ -278,7 +277,8 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
     }
 
 
-    private val gotovye = ArrayList<Pair<String, String>>()
+    /** id, title, kind, prompt, error text (empty = done) of works finished in the last pass */
+    private val gotovye = ArrayList<Array<String>>()
     private val h = Handler(Looper.getMainLooper())
     @Volatile private var vFone = false
 
@@ -297,7 +297,8 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
                         if (s == "success") {
                             val u = ssylki(d)
                             x.put("st", if (u.length() > 0) "gotovo" else "oshibka").put("urls", u)
-                            if (u.length() > 0) gotovye.add(Pair(x.optString("nazv", ""), x.optString("tip", "")))
+                            gotovye.add(arrayOf(x.optString("id"), x.optString("nazv", ""), x.optString("tip", ""), x.optString("prompt", ""),
+                                if (u.length() > 0) "" else "Готово, но файла в ответе нет"))
                             val tk = JSONArray()
                             try { treki(JSONObject(d.optString("resultJson", "{}")), tk, 0) } catch (ignored: Exception) {}
                             if (tk.length() > 0) x.put("treki", tk)
@@ -306,9 +307,11 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
                         } else if (s == "fail") {
                             val m = d.optString("failMsg", "")
                             x.put("st", "oshibka").put("msg", if (m.isEmpty()) "Не получилось, кредиты не списаны" else chisto(m))
+                            gotovye.add(arrayOf(x.optString("id"), x.optString("nazv", ""), x.optString("tip", ""), x.optString("prompt", ""), x.optString("msg")))
                             izm = true
-                        } else if (System.currentTimeMillis() - x.optLong("t") > 30 * 60_000L) {
-                            x.put("st", "oshibka").put("msg", "Нет ответа 30 минут"); izm = true
+                        } else if (System.currentTimeMillis() - x.optLong("t") > 3 * 3600_000L) {
+                            // video and voice can wait in the queue for a long time: a paid result must not be dropped after 30 min
+                            x.put("st", "oshibka").put("msg", "Нет ответа 3 часа — попробуйте ещё раз"); izm = true
                         }
                     } catch (e: Exception) {
                         if (e.message.toString().startsWith("Ключ")) {
@@ -316,34 +319,43 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
                         }
                     }
                 }
-                if (izm) { synchronized(lock) { sohranitZadachi(z) }; js("pryamoyObnovit") }
-            if (vFone) for (n in gotovye) uvedomit(n.first, n.second)
+                if (izm) {
+                    // merge by id into the list as it is now: a work removed or added meanwhile must stay removed / added
+                    synchronized(lock) {
+                        val po = HashMap<String, JSONObject>()
+                        for (i in 0 until z.length()) z.optJSONObject(i)?.let { po[it.optString("id")] = it }
+                        val sey = this@Pryamoy.zadachi(); val o = JSONArray()
+                        for (i in 0 until sey.length()) { val c = sey.optJSONObject(i) ?: continue; o.put(po[c.optString("id")] ?: c) }
+                        sohranitZadachi(o)
+                    }
+                    js("pryamoyObnovit")
+                }
+            if (sam()) for (n in gotovye) uvedomit(n)
         }
     }
 
     private fun estIdut(): Boolean { val z = zadachi(); for (i in 0 until z.length()) if (z.optJSONObject(i)?.optString("st") == "idet") return true; return false }
 
-    /** The app went to the background: keep checking every 20 s while something is being made, then tell with a notification. */
-    private val fonShag = object : Runnable { override fun run() { if (!vFone || !estIdut()) return; proveritVse(); h.postDelayed(this, 20_000L) } }
-    fun fon(on: Boolean) { vFone = on; h.removeCallbacks(fonShag); if (on) h.postDelayed(fonShag, 20_000L) }
+    /** Nobody looks at the studio page (app minimised, or the person is on the site): the app checks and tells by itself. */
+    private fun sam(): Boolean = vFone || !a.karkasVidim()
 
-    private fun uvedomit(nazv: String, tip: String) {
-        try {
-            val nm = a.getSystemService(NotificationManager::class.java)
-            if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel("gotovo") == null)
-                nm.createNotificationChannel(NotificationChannel("gotovo", "Готовые работы", NotificationManager.IMPORTANCE_DEFAULT))
-            val open = Intent(a, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            val pi = PendingIntent.getActivity(a, 11, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            val muz = tip == "muzyka" || nazv.startsWith("Песня") || nazv.startsWith("Минусовка") || nazv.startsWith("Кавер") || nazv.startsWith("Продление") || nazv.startsWith("Вокал")
-            val zag = when { muz -> "Песня готова"; tip == "kartinki" || tip == "kartinka" -> "Картинка готова"; tip == "video" -> "Видео готово"; else -> "Готово" }
-            @Suppress("DEPRECATION")
-            val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(a, "gotovo") else Notification.Builder(a)
-            val n = b.setSmallIcon(R.drawable.ic_nota)
-                .setContentTitle(zag)
-                .setContentText(if (nazv.isEmpty()) "Откройте приложение" else nazv)
-                .setContentIntent(pi).setAutoCancel(true).build()
-            nm.notify(100 + (nazv.hashCode() and 0xffff), n)
-        } catch (ignored: Exception) {}
+    /** Every 20 s while something is being made; the studio page polls by itself when it is on screen. */
+    private val fonShag = object : Runnable { override fun run() { if (!estIdut()) return; if (sam()) proveritVse(); h.postDelayed(this, 20_000L) } }
+    fun fon(on: Boolean) { vFone = on; h.removeCallbacks(fonShag); h.postDelayed(fonShag, 20_000L) }
+
+    private fun uvedomit(n: Array<String>) {
+        val id = n[0]; val nazv = n[1]; val tip = n[2]; val prompt = n[3]; val oshibka = n[4]
+        val muz = tip == "muzyka" || nazv.startsWith("Песня") || nazv.startsWith("Минусовка") || nazv.startsWith("Кавер") || nazv.startsWith("Продление") || nazv.startsWith("Вокал")
+        val zag = when {
+            oshibka.isNotEmpty() -> "Не получилось" + (if (nazv.isEmpty()) "" else ": " + nazv)
+            muz -> "Песня готова"; tip == "kartinki" || tip == "kartinka" -> "Картинка готова"; tip == "video" -> "Видео готово"
+            tip == "golos" -> "Озвучка готова"; else -> "Готово"
+        }
+        val opis = prompt.trim().ifEmpty { nazv }
+        val tekst = if (oshibka.isNotEmpty()) oshibka else if (opis == nazv || nazv.isEmpty() || muz) opis else "$nazv: $opis"
+        // the studio screen where this work is listed
+        val k = when { muz -> "muzyka"; tip == "kartinki" || tip == "kartinka" -> "kartinki"; tip == "video" -> "video"; tip == "golos" -> "golos"; else -> null }
+        Gotovo.pokazat(a, "pz-$id", zag, tekst, null, if (k != null) "razdel" else "pryamoy", k)
     }
 
     private inner class Most {
@@ -359,9 +371,11 @@ class Pryamoy(private val a: MainActivity, private val view: WebView) {
         @JavascriptInterface fun zadachi(): String = this@Pryamoy.zadachi().toString()
 
         @JavascriptInterface fun ubrat(id: String?) {
-            val z = this@Pryamoy.zadachi(); val o = JSONArray()
-            for (i in 0 until z.length()) { val x = z.optJSONObject(i); if (x != null && id != x.optString("id")) o.put(x) }
-            sohranitZadachi(o)
+            synchronized(lock) {
+                val z = this@Pryamoy.zadachi(); val o = JSONArray()
+                for (i in 0 until z.length()) { val x = z.optJSONObject(i); if (x != null && id != x.optString("id")) o.put(x) }
+                sohranitZadachi(o)
+            }
         }
 
         /** Starts one paid generation. Called only from the "Создать" button after a confirm. */

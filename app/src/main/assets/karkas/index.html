@@ -228,6 +228,7 @@ details[open] summary{margin-bottom:12px}
 .mzvse{display:flex;gap:8px;margin:10px 0 4px}.mzvse .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px}.mzvse svg{width:18px;height:18px}
 .plk4{margin-top:-6px}.plk4 button{gap:6px;display:flex;align-items:center;justify-content:center;font-size:13.5px}.plk4 svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
 .trd{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.trd button.izb{color:#ff8a3c}.trd button{font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:11px;background:var(--knopka);color:var(--tekst);border:0}
+.chat .mkop{align-self:flex-start;margin:-2px 0 4px}
 .zv{border:1px solid var(--liniya);border-radius:18px;padding:14px;background:var(--pov1);margin:12px 0}.zvh b{display:block;font-size:17px}.zvh small{display:block;color:var(--tekst3);font-size:12.5px;margin:2px 0 10px}
 .zvt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.zvt::-webkit-scrollbar{display:none}.zvt button{flex:1 1 auto;padding:8px 14px;border-radius:12px;border:1px solid var(--liniya);background:var(--knopka);font-weight:700;font-size:13px}.zvt button.on{border-color:#ff9a3c;background:rgba(255,154,60,.16)}
 .zvq{width:100%;box-sizing:border-box;background:var(--fon);color:var(--tekst);border:1px solid var(--liniya);border-radius:12px;padding:10px 12px;font:400 14px Onest,sans-serif;margin-bottom:10px;outline:none}
@@ -645,7 +646,7 @@ function plKlik(d,el){
 document.addEventListener('click',function(e){ var v=e.target.closest('#pleer .plv'); if(!v||!plA.duration) return; var r=v.getBoundingClientRect(); plA.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*plA.duration; });
 
 function pzKarta(x){
-  var st = x.st==='gotovo'?'Готово':x.st==='oshibka'?'Ошибка':'Создаётся…', muz=x.tip==='muzyka';
+  var st = x.st==='gotovo'?'Готово':x.st==='oshibka'?'Ошибка':(Date.now()-(x.t||0)>15*60000?'Создаётся… дольше обычного, ждём':'Создаётся…'), muz=x.tip==='muzyka';
   var h='<div class="pzz"><span class="st '+x.st+'">'+st+'</span> <small>· '+esc(x.nazv||(PZT[x.tip]?PZT[x.tip].t:''))+' · '+kogda(x.t)+'</small><p>'+esc(x.prompt)+'</p>';
   if(x.st==='oshibka') h+='<small>'+esc(x.msg||'')+'</small>';
   var trh=plTrekHtml(x), nm=String(x.prompt||x.nazv||'Картинка').slice(0,50); if(trh) h+=trh; else (x.urls||[]).forEach(function(u){
@@ -690,6 +691,10 @@ function pzCena(m,o){ var id=m.m, r=String(o.resolution||o.size||'1K').toUpperCa
   else if(/^flux-2\/pro-/.test(id)) c=r==='2K'?7:5;
   else if(/^seedream\/5-pro-/.test(id)) c=o.quality==='high'?14:7;
   else if(/^ai-music-api\//.test(id)) c=12; /* песня: два варианта, как в простой форме */
+  else if(/^wan\/3-0-video(-prime)?$/.test(id)){ /* видео: кредитов за секунду × секунды (аудит цен 28.10); с роликами-образцами дороже — цену не угадываем */
+    if((o.video_urls&&o.video_urls.length)||(o.reference_video_urls&&o.reference_video_urls.length)) return null;
+    var rv=String(o.resolution||'1080P').toUpperCase(), sek=parseInt(o.duration||5,10)||5;
+    c=(/prime$/.test(id)?{'480P':12,'720P':25,'1080P':50}:{'480P':8,'720P':16,'1080P':32})[rv]; if(!c) return null; return c*sek; }
   return c==null?null:c*n; }
 function kredity(c){ var d=c%10, d2=c%100; return c+' '+(d===1&&d2!==11?'кредит':d>=2&&d<=4&&(d2<12||d2>14)?'кредита':'кредитов'); }
 function cenaTekst(m){ if(!m) return ''; var c=pzCena(m,sobrat(m).o); return c?'Примерно '+kredity(c)+' за запуск':'Спишутся кредиты с вашего счёта сервиса — цена зависит от модели'; }
@@ -784,7 +789,7 @@ function formaHtml(){
   var h='';
   if(pzKat==='chat'){
     h+='<div class="pz"><select data-act2="chatm">'+CHATM.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===pzChatM?' selected':'')+'>'+c[1]+'</option>'}).join('')+'</select></div>';
-    h+='<div class="chat">'+(pzChatH.length?pzChatH.map(function(x){return '<div class="msg '+x.role+'">'+esc(x.content).replace(/\n/g,'<br>')+'</div>'}).join(''):'<div class="empty">Спросите что угодно: тексты, описания товаров, ответы покупателям, разбор задач.</div>')
+    h+='<div class="chat">'+(pzChatH.length?pzChatH.map(function(x,i){return '<div class="msg '+x.role+'">'+esc(x.content).replace(/\n/g,'<br>')+'</div>'+(x.role==='assistant'?'<div class="trd mkop"><button data-act="pz-kop" data-i="'+i+'">Копировать</button><button data-act="pz-tdel" data-i="'+i+'">'+svg('share')+' Отправить</button></div>':'')}).join(''):'<div class="empty">Спросите что угодно: тексты, описания товаров, ответы покупателям, разбор задач.</div>')
       +(pzChatZhdu?'<div class="msg assistant">Печатает…</div>':'')+'</div>';
     h+='<textarea id="prompt" placeholder="Ваш вопрос" style="min-height:90px"></textarea><button class="btn a w" data-act="pz-chat">Отправить</button>'
       +(pzChatH.length?'<button class="btn b w" data-act="pz-chat-new">Новый разговор</button>':'');
@@ -792,7 +797,7 @@ function formaHtml(){
     var l=modeliKat(pzKat), m=tekMod();
     var opt=function(x){return '<option value="'+esc(x.m)+'"'+(x===m?' selected':'')+'>'+esc(x.n)+'</option>'}, lt=l.filter(function(x){return topI(x.m)<99}), lo=l.filter(function(x){return topI(x.m)>=99});
     h+='<div class="pz"><select data-act2="model">'+(lt.length&&lo.length?'<optgroup label="Лучшие">'+lt.map(opt).join('')+'</optgroup><optgroup label="Все остальные">'+lo.map(opt).join('')+'</optgroup>':l.map(opt).join(''))+'</select></div>';
-    if(m && /text-to-speech/.test(m.m)) h+='<p class="sm" style="color:var(--tekst3);margin:6px 0">Озвучка сейчас может долго стоять в очереди. Если за 30 минут не придёт — попробуйте позже.</p>';
+    if(m && /text-to-speech/.test(m.m)) h+='<p class="sm" style="color:var(--tekst3);margin:6px 0">Озвучка сейчас может долго стоять в очереди. Приложение подождёт до 3 часов и пришлёт уведомление, когда будет готово.</p>';
     if(m){
       var po=PORYADOK[m.m], gl, dop;
       if(po){ gl=po.map(function(k){return m.f.filter(function(f){return f.k===k})[0]}).filter(Boolean); dop=m.f.filter(function(f){return po.indexOf(f.k)<0}); }
@@ -1214,9 +1219,12 @@ window.pzChat=function(t,err){
   if(mzPerevod){ mzPerevodOtvet(t,err); return; }
   if(mzZhdu){ mzOtvet(t,err); return; }
   pzChatZhdu=false;
-  if(t==null){ toast('Ошибка: '+(err||'')); pzChatH.pop(); } else pzChatH.push({role:'assistant',content:t});
+  var vopros=null;
+  if(t==null){ toast('Не получилось: '+(err||'попробуйте ещё раз')); var u=pzChatH.pop(); vopros=u&&u.role==='user'?u.content:null; } else pzChatH.push({role:'assistant',content:t});
   try{ localStorage.setItem('pz-chat',JSON.stringify(pzChatH.slice(-40))); }catch(e){}
   if(cur==='pryamoy'||cur==='razdel') redraw();
+  /* вопрос не пропадает: возвращаем его в поле, чтобы отправить ещё раз */
+  if(vopros){ var q=document.getElementById('prompt'); if(q&&!q.value) q.value=vopros; }
 };
 var PZK={video:'video',kartinki:'kartinka',muzyka:'muzyka',kino:'video',rabota:'kartinka'};
 var RK={video:'video',kartinki:'kartinki',muzyka:'muzyka',golos:'golos',guby:'guby',kino:'video',chat:'chat',rabota:'kartinki'};
@@ -1243,6 +1251,7 @@ function pzKlik(d){
     return true; }
   if(a==='pz-chat'){ var q=(document.getElementById('prompt').value||'').trim(); if(!q||pzChatZhdu) return true;
     pzChatH.push({role:'user',content:q}); pzChatZhdu=true; document.getElementById('prompt').value=''; P.chat(pzChatM, JSON.stringify(pzChatH.slice(-20))); redraw(); return true; }
+  if(a==='pz-kop'||a==='pz-tdel'){ var mx=pzChatH[+d.i]; if(!mx) return true; if(a==='pz-kop'){ if(K&&K.kopirovat) K.kopirovat(mx.content); else toast('Обновите приложение'); } else if(K&&K.podelitsyaTekstom) K.podelitsyaTekstom(mx.content); return true; }
   if(a==='pz-chat-new'){ pzChatH=[]; try{localStorage.removeItem('pz-chat')}catch(e){} redraw(); return true; }
   if(a==='pz-tip'){ pzTip=d.v; redraw(); return true; }
   if(a==='pz-fmt'){ pzFmt=d.v; redraw(); return true; }

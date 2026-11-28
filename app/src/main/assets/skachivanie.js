@@ -22,10 +22,12 @@
     var h = a.getAttribute('href') || '';
     if (h.indexOf('blob:') === 0 || h.indexOf('data:') === 0) { ev.preventDefault(); grab(h, a.getAttribute('download')); }
     else if (own(h)) { ev.preventDefault(); ArgedaApp.skachat(new URL(h, location.href).href, a.getAttribute('download') || ''); }
+    else if (/^https:\/\//i.test(h) && ArgedaApp.skachatFayl) { ev.preventDefault(); ArgedaApp.skachatFayl(h, a.getAttribute('download') || ''); }
   }, true);
   HTMLAnchorElement.prototype.click = (function(prev){ return function(){
     var h = this.getAttribute('href') || '';
     if (this.hasAttribute('download') && own(h)) { ArgedaApp.skachat(new URL(h, location.href).href, this.getAttribute('download') || ''); return; }
+    if (this.hasAttribute('download') && /^https:\/\//i.test(h) && ArgedaApp.skachatFayl) { ArgedaApp.skachatFayl(h, this.getAttribute('download') || ''); return; }
     return prev.apply(this, arguments);
   }; })(HTMLAnchorElement.prototype.click);
 })();
@@ -73,4 +75,15 @@
   };
   navigator.canShare = function(){ return true; };
   window.print = function(){ ArgedaApp.print(); };
+  // «Копировать»: через приложение, работает в любой версии WebView
+  try {
+    var kop = function(t){ ArgedaApp.kopirovat(String(t == null ? '' : t)); return Promise.resolve(); };
+    if (navigator.clipboard) navigator.clipboard.writeText = kop;
+    else Object.defineProperty(navigator, 'clipboard', { value: { writeText: kop, readText: function(){ return Promise.reject(new Error('net')); } }, configurable: true });
+  } catch (e) {}
+  // первый запуск генерации — спросить разрешение на уведомления «Готово», пока человек в приложении
+  document.addEventListener('click', function(ev){
+    var b = ev.target && ev.target.closest ? ev.target.closest('button,[role=button]') : null; if (!b || !ArgedaApp.zhdu) return;
+    if (/^\s*(Создать|Сгенерировать|Сделать|Сочинить|Озвучить|Запустить|Оживить|Нарисовать)/i.test(b.textContent || '')) ArgedaApp.zhdu();
+  }, true);
 })();
